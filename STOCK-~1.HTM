@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Stock Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0b0e14; --panel:#141922; --panel2:#1b212c; --line:#262d3a;
+  --txt:#e6e9ef; --muted:#8b93a3; --up:#22c55e; --down:#ef4444;
+  --accent:#5b8def; --warn:#f59e0b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;font-size:14px}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:18px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+  padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+h1{font-size:19px;margin:0;letter-spacing:.3px}
+.sub{color:var(--muted);font-size:12px;margin-top:3px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea,button{font-family:inherit;font-size:13px;color:var(--txt);
+  background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+button{cursor:pointer;background:var(--panel2)}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.ghost{background:transparent}
+button.sm{padding:4px 8px;font-size:12px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 16px;border-radius:8px;background:var(--panel);border:1px solid var(--line);cursor:pointer}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.panel h2{font-size:14px;margin:0 0 12px;color:var(--muted);font-weight:600;
+  text-transform:uppercase;letter-spacing:.8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px}
+.card .lab{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+.card .val{font-size:21px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums}
+.card .sub2{font-size:12px;margin-top:3px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:right;color:var(--muted);font-size:11px;font-weight:600;padding:8px 10px;
+  border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:hover{background:var(--panel2)}
+.up{color:var(--up)} .down{color:var(--down)} .mut{color:var(--muted)}
+.tick{font-weight:700;letter-spacing:.5px}
+.tick .nm{display:block;font-weight:400;font-size:11px;color:var(--muted);letter-spacing:0;
+  max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.pill.up{background:rgba(34,197,94,.14)} .pill.down{background:rgba(239,68,68,.14)}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
+.wcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer}
+.wcard:hover{border-color:var(--accent)}
+.wcard.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.wcard .px{font-size:19px;font-weight:700;margin:5px 0;font-variant-numeric:tabular-nums}
+.bar{height:5px;background:var(--line);border-radius:99px;position:relative;margin:9px 0 4px}
+.bar i{position:absolute;top:-2px;width:3px;height:9px;background:var(--accent);border-radius:2px}
+.tiny{font-size:11px;color:var(--muted)}
+.fund{display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0;color:var(--muted)}
+.fund b{color:var(--txt);font-weight:600}
+.msg{padding:10px 13px;border-radius:8px;margin-bottom:12px;font-size:13px;line-height:1.55}
+.msg.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35)}
+.msg.info{background:rgba(91,141,239,.1);border:1px solid rgba(91,141,239,.35)}
+.msg.warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35)}
+textarea{width:100%;min-height:190px;resize:vertical;line-height:1.65}
+.hide{display:none!important}
+.chartbox{position:relative;height:340px}
+.notecard{background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+  padding:12px;margin-bottom:9px}
+.notecard .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.notecard pre{margin:0;white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6}
+footer{color:var(--muted);font-size:11.5px;text-align:center;padding:22px 0;line-height:1.7}
+input.cell{width:88px;text-align:right;padding:4px 7px}
+
+/* ---------- มือถือ ---------- */
+@media(max-width:720px){
+  .wrap{padding:12px}
+  h1{font-size:17px}
+  header{gap:10px}
+  header .row{width:100%}
+  #provider{flex:1 1 130px}
+  #apikey{flex:1 1 120px;min-width:0}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;padding:8px 13px;font-size:13px}
+  .panel{padding:13px}
+  .cards{grid-template-columns:repeat(2,1fr);gap:9px}
+  .card .val{font-size:18px}
+  .wgrid{grid-template-columns:repeat(2,1fr)}
+  .chartbox{height:250px}
+  /* ตารางพอร์ต -> การ์ดต่อแถว อ่านง่ายบนจอแคบ */
+  #pfTable thead{display:none}
+  #pfTable,#pfTable tbody,#pfTable tr,#pfTable td{display:block;width:100%}
+  #pfTable tr{border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    margin-bottom:9px;background:var(--panel2)}
+  #pfTable td{border:none;padding:3px 0;text-align:right;
+    display:flex;justify-content:space-between;align-items:center;white-space:normal}
+  #pfTable td:first-child{border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:5px}
+  #pfTable td::before{content:attr(data-l);color:var(--muted);font-size:11.5px;
+    text-transform:uppercase;letter-spacing:.5px}
+  #pfTable td:first-child::before,#pfTable td:last-child::before{content:''}
+  input.cell{width:110px}
+  .notecard pre{font-size:12.5px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>📈 My Stock Dashboard</h1>
+    <div class="sub">พอร์ต · Watchlist · ตัวเลขพื้นฐาน · บันทึกวิเคราะห์</div>
+  </div>
+  <div class="row">
+    <select id="provider" title="ผู้ให้บริการข้อมูลราคา">
+      <option value="twelvedata">Twelve Data</option>
+      <option value="fmp">Financial Modeling Prep</option>
+    </select>
+    <input id="apikey" type="password" placeholder="API key" style="width:180px">
+    <button class="ghost sm" id="saveKey">บันทึก key</button>
+    <button class="ghost sm" id="testKey">ทดสอบ key</button>
+    <button class="primary" id="refresh">🔄 ดึงราคา</button>
+  </div>
+</header>
+<div class="row" style="justify-content:space-between;margin-bottom:10px">
+  <span class="tiny">อัปเดตโดย Claude ทุกเช้า 08:30 น. (จันทร์–ศุกร์) · กด "ดึงราคา" เองได้ถ้าอยากดูราคาสดระหว่างวัน</span>
+  <span class="tiny" id="mktStatus"></span>
+</div>
+
+<div id="banner"></div>
+<div class="tiny" id="stamp" style="margin-bottom:14px"></div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="db">📌 แนวโน้มวันนี้</div>
+  <div class="tab" data-tab="pf">พอร์ต</div>
+  <div class="tab" data-tab="wl">Watchlist &amp; กราฟ</div>
+  <div class="tab" data-tab="nt">บันทึกวิเคราะห์</div>
+  <div class="tab" data-tab="st">ตั้งค่า / สำรองข้อมูล</div>
+</div>
+
+<!-- ==================== DAILY BRIEF ==================== -->
+<section id="tab-db">
+  <div id="regimeBox"></div>
+  <div class="panel">
+    <h2>ภาวะตลาด</h2>
+    <div class="cards" id="idxCards"></div>
+    <div style="margin-top:14px;line-height:1.85" id="regimeWhy"></div>
+  </div>
+  <div class="msg warn" style="font-size:12.5px">
+    <b>ตัวเลข % ที่เห็นคือ "เป้าหมายราคาเฉลี่ยของนักวิเคราะห์" ไม่ใช่คำทำนายของ Claude</b><br>
+    มันคือความเห็นของคนกลุ่มหนึ่งที่มักจะมองโลกในแง่ดีเกินจริงและผิดบ่อยมาก
+    ใช้เป็นจุดตั้งต้นในการหาข้อมูลต่อ ไม่ใช่เหตุผลในการกดซื้อ · กด "ดูเหตุผล" เพื่ออ่านทั้งข้อดีและความเสี่ยง
+  </div>
+
+  <div class="panel" style="border-left:3px solid var(--accent)">
+    <h2 id="coreHead">🛡️ โซน A — แกนหลัก</h2>
+    <div class="tiny" style="margin:-6px 0 13px;line-height:1.7">
+      บริษัทที่มีกำไรจริงและธุรกิจพิสูจน์แล้ว เหวี่ยงน้อยกว่า เหมาะกับเงินส่วนที่ไม่อยากให้หายไปทั้งก้อน
+    </div>
+    <div id="coreList"></div>
+  </div>
+
+  <div class="panel" style="border-left:3px solid var(--warn)">
+    <h2 id="spicyHead">🔥 โซน B — หุ้นซิ่ง</h2>
+    <div class="tiny" style="margin:-6px 0 13px;line-height:1.7">
+      เหวี่ยงแรงมาก ส่วนใหญ่<b>ยังไม่มีกำไร</b> ราคาขับเคลื่อนด้วยความคาดหวังและข่าว
+      ขึ้นได้ทีละ 20-50% ในวันเดียว และลงได้เท่ากัน<br>
+      <b class="down">กติกาที่ควรตั้งกับตัวเอง: เงินที่ใส่โซนนี้ต้องเป็นเงินที่หายทั้งก้อนแล้วยังนอนหลับ
+      และรวมกันไม่ควรเกิน 20-25% ของพอร์ต</b>
+    </div>
+    <div id="spicyList"></div>
+  </div>
+  <div class="panel">
+    <h2>แหล่งอ้างอิง</h2>
+    <div id="srcList" class="tiny" style="line-height:2"></div>
+  </div>
+</section>
+
+<!-- ==================== PORTFOLIO ==================== -->
+<section id="tab-pf" class="hide">
+  <div class="cards" style="margin-bottom:16px">
+    <div class="card"><div class="lab">มูลค่าพอร์ต</div><div class="val" id="k-val">—</div>
+      <div class="sub2" id="k-val2">—</div></div>
+    <div class="card"><div class="lab">ต้นทุนรวม</div><div class="val" id="k-cost">—</div>
+      <div class="sub2" id="k-cost2">—</div></div>
+    <div class="card"><div class="lab">กำไร/ขาดทุนรวม</div><div class="val" id="k-pl">—</div>
+      <div class="sub2" id="k-pl2">—</div></div>
+    <div class="card"><div class="lab">เปลี่ยนแปลงวันนี้</div><div class="val" id="k-day">—</div>
+      <div class="sub2" id="k-day2">—</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>รายการถือครอง</h2>
+      <div style="overflow-x:auto">
+        <table id="pfTable">
+          <thead><tr>
+            <th>หุ้น</th><th>จำนวน</th><th>ต้นทุน/หุ้น</th><th>ราคา</th><th>วันนี้</th>
+            <th>มูลค่า</th><th>กำไร/ขาดทุน</th><th>%</th><th>%พอร์ต</th><th></th>
+          </tr></thead>
+          <tbody id="pfBody"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <input id="ph-sym" placeholder="TICKER" style="width:110px;text-transform:uppercase">
+        <input id="ph-qty" placeholder="จำนวนหุ้น" type="number" step="any" style="width:120px">
+        <input id="ph-avg" placeholder="ต้นทุนเฉลี่ย $" type="number" step="any" style="width:140px">
+        <button class="primary" id="addHold">+ เพิ่มหุ้น</button>
+      </div>
+      <div class="tiny" style="margin-top:9px">
+        แก้จำนวน/ต้นทุนได้โดยพิมพ์ทับในตารางแล้วกด Enter · รองรับเศษหุ้น (fractional shares)
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>สัดส่วนพอร์ต</h2>
+      <div style="position:relative;height:290px"><canvas id="pieChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== WATCHLIST ==================== -->
+<section id="tab-wl" class="hide">
+  <div class="panel">
+    <h2>Watchlist</h2>
+    <div class="row" style="margin-bottom:13px">
+      <input id="wl-sym" placeholder="เพิ่ม TICKER เช่น NVDA" style="width:190px;text-transform:uppercase">
+      <button class="primary" id="addWatch">+ เพิ่ม</button>
+      <span class="tiny">คลิกการ์ดเพื่อดูกราฟ</span>
+    </div>
+    <div class="wgrid" id="wlGrid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <h2 style="margin:0" id="chartTitle">กราฟราคา</h2>
+      <div class="row" id="ranges">
+        <button class="sm" data-r="30">1M</button>
+        <button class="sm" data-r="90">3M</button>
+        <button class="sm" data-r="180">6M</button>
+        <button class="sm primary" data-r="365">1Y</button>
+        <button class="sm" data-r="1095">3Y</button>
+      </div>
+    </div>
+    <div class="chartbox"><canvas id="lineChart"></canvas></div>
+    <div id="chartStats" class="row tiny" style="margin-top:12px;gap:20px"></div>
+  </div>
+</section>
+
+<!-- ==================== NOTES ==================== -->
+<section id="tab-nt" class="hide">
+  <div class="panel">
+    <h2>เขียนบันทึกวิเคราะห์</h2>
+    <div class="row" style="margin-bottom:11px">
+      <select id="nt-sym" style="width:190px"></select>
+      <input id="nt-sym-new" placeholder="หรือพิมพ์ ticker ใหม่" style="width:190px;text-transform:uppercase">
+    </div>
+    <textarea id="nt-body" placeholder="ทำไมถึงสนใจตัวนี้?
+· thesis หลัก / ธุรกิจทำเงินยังไง
+· ตัวเลขที่ต้องจับตา (revenue growth, margin, guidance)
+· ความเสี่ยงที่จะทำให้ thesis พัง
+· ราคาที่คิดว่าน่าเข้า / จุดที่จะยอมตัดขาดทุน
+· catalyst ที่รออยู่ (วันประกาศงบ, งานเปิดตัว)"></textarea>
+    <div class="row" style="margin-top:11px">
+      <button class="primary" id="saveNote">บันทึก</button>
+      <span class="tiny" id="noteMsg"></span>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>บันทึกทั้งหมด</h2>
+    <div id="noteList"></div>
+  </div>
+</section>
+
+<!-- ==================== SETTINGS ==================== -->
+<section id="tab-st" class="hide">
+  <div class="panel">
+    <h2>วิธีขอ API key (ฟรี)</h2>
+    <div style="line-height:1.85">
+      <b>ตัวเลือกที่ 1 — Twelve Data</b> (แนะนำ ให้กราฟย้อนหลังยาว)<br>
+      สมัครที่ <a href="https://twelvedata.com/pricing" target="_blank">twelvedata.com/pricing</a> → เลือกแพลน Basic (ฟรี)
+      → คัดลอก API key จากหน้า Dashboard<br>
+      <span class="tiny">โควต้าฟรี: 8 ครั้ง/นาที, 800 ครั้ง/วัน — เพียงพอสำหรับใช้ส่วนตัว</span>
+      <br><br>
+      <b>ตัวเลือกที่ 2 — Financial Modeling Prep</b> (ให้ P/E, market cap ครบกว่า)<br>
+      สมัครที่ <a href="https://site.financialmodelingprep.com/developer/docs" target="_blank">financialmodelingprep.com</a>
+      → Dashboard → คัดลอก API key<br>
+      <span class="tiny">โควต้าฟรี: 250 ครั้ง/วัน</span>
+      <br><br>
+      key จะถูกเก็บไว้ในเบราว์เซอร์ของคุณเองเท่านั้น (localStorage) ไม่ถูกส่งไปที่ไหนนอกจากผู้ให้บริการข้อมูล
+    </div>
+  </div>
+  <div class="panel">
+    <h2>สำรอง / กู้คืนข้อมูล</h2>
+    <div class="tiny" style="margin-bottom:12px;line-height:1.7">
+      ข้อมูลทั้งหมดเก็บในเบราว์เซอร์เครื่องนี้ ถ้าล้าง cache ข้อมูลจะหาย
+      แนะนำให้กด Export เก็บไฟล์ไว้เป็นระยะ
+    </div>
+    <div class="row">
+      <button class="primary" id="expBtn">⬇ Export JSON</button>
+      <button id="impBtn">⬆ Import JSON</button>
+      <input type="file" id="impFile" accept=".json" class="hide">
+      <button id="seedBtn">↺ รีเซ็ตพอร์ตกลับเป็นข้อมูล Dime! (11 ส.ค. 69)</button>
+      <button id="seedNoteBtn">↺ กู้บันทึกวิเคราะห์ตั้งต้น</button>
+      <button id="clearBtn" style="border-color:var(--down);color:var(--down)">ล้างข้อมูลทั้งหมด</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  ข้อมูลราคาอาจล่าช้า 15 นาทีหรือเป็นราคาปิดวันก่อน ขึ้นกับแพลนฟรีของผู้ให้บริการ<br>
+  หน้านี้เป็นเครื่องมือติดตามส่วนตัว ไม่ใช่คำแนะนำการลงทุน · การลงทุนมีความเสี่ยง
+</footer>
+</div>
+
+<script>
+/* =======================================================================
+   ===DAILY_DATA_START===
+   บล็อกนี้ถูกเขียนทับอัตโนมัติโดย scheduled task "us-stock-daily-brief"
+   ทุกเช้า 08:30 น. ห้ามแก้ด้วยมือ (จะถูกทับ) — แก้บันทึกส่วนตัวที่แท็บ "บันทึกวิเคราะห์" แทน
+   ======================================================================= */
+const DAILY={
+stamp:'2026-08-11T08:30:00+07:00',
+
+/* level: 'buy' = น่าทยอยเข้า | 'hold' = ถือรอ เข้าน้อย | 'caution' = ตลาดร้อน ระวัง */
+regime:{
+  level:'caution',
+  title:'ตลาดอยู่จุดสูงสุดเป็นประวัติการณ์ — ยังไม่ใช่จังหวะเข้าหนัก',
+  summary:'S&P 500 เพิ่งปิดทำสถิติสูงสุดใหม่เมื่อวันศุกร์ที่ 7,758 และ VIX อยู่แค่ 15.46 ซึ่งต่ำมาก '
+    +'แปลว่าตลาด "ไม่กลัวอะไรเลย" ในภาวะแบบนี้ราคาไม่ได้ให้ส่วนลดกับคุณ การเข้าซื้อตอนนี้คือการจ่ายราคาเต็ม '
+    +'ไม่ได้แปลว่าตลาดจะลงพรุ่งนี้ แต่แปลว่าอัตราส่วนความเสี่ยงต่อผลตอบแทนไม่เข้าข้างคนซื้อ',
+  why:[
+    'S&P 500 ปิดที่ 7,753.11 (-0.06%) ห่างจากจุดสูงสุดตลอดกาลไม่ถึง 0.1%',
+    'VIX 15.46 — ต่ำกว่าค่าเฉลี่ยระยะยาว (~19) แปลว่าตลาดประเมินความเสี่ยงไว้ต่ำมาก',
+    'Shiller CAPE ~41-42 ใกล้ระดับสูงสุดในประวัติศาสตร์ แพงกว่านี้มีแค่ปี 1999',
+    'หุ้น 10 ตัวใหญ่สุดกินน้ำหนักดัชนี ~41% สูงกว่าจุดพีคฟองสบู่ดอทคอมที่ 27%',
+    'งบใหญ่ยังไม่ออก — NVDA 26 ส.ค. คือตัวชี้ทิศทั้งตลาด รอดูก่อนได้'
+  ],
+  action:'DCA เข้า IVV ตามปกติต่อไป (ส่วนนี้ไม่ต้องจับจังหวะ) · ส่วนหุ้นซิ่ง แนะนำถือเงินสดรอ '
+    +'หรือถ้าจะเข้าให้แบ่งเป็น 3 ไม้ ไม่เข้าทีเดียวหมด · หลีกเลี่ยงการซื้อไล่ราคาหุ้นที่เพิ่งวิ่งแรง'
+},
+
+indices:[
+  {k:'S&P 500', v:'7,753.11', c:-0.06},
+  {k:'Nasdaq',  v:'26,605.36',c:-0.32},
+  {k:'VIX',     v:'15.46',    c:+3.76},
+  {k:'CAPE',    v:'~41-42',   c:null}
+],
+
+/* target = เป้าหมายราคาเฉลี่ยของนักวิเคราะห์ (ไม่ใช่คำทำนายของ Claude)
+   conviction 1-5 = ความหนักแน่นของหลักฐาน ไม่ใช่ความน่าจะเป็นที่จะกำไร */
+
+/* โซน A — แกนหลัก: บริษัทมีกำไรจริง ธุรกิจพิสูจน์แล้ว เหวี่ยงน้อยกว่า */
+core:[
+ {sym:'NVDA',name:'NVIDIA',px:217.55,target:337.50,conviction:5,tag:'ถืออยู่แล้ว 4.4%',
+  why:'ครองตลาด GPU สำหรับเทรน AI คูเมืองจริงคือ CUDA รายได้ดาต้าเซ็นเตอร์ไตรมาสล่าสุด 51.2 พันล้าน +66% '
+    +'ฝั่งเครือข่ายโต 199% เป็น 14.8 พันล้าน · นักวิเคราะห์ 86% ให้ซื้อ',
+  catalyst:'⚠️ งบ 26 ส.ค. 2026 — อีเวนต์ที่ขยับทั้งตลาด ไม่ใช่แค่หุ้นตัวเดียว',
+  risk:'ราคาสะท้อนความสมบูรณ์แบบไว้แล้ว งบดีแต่หุ้นลงเกิดซ้ำหลายรอบ · ลูกค้ารายใหญ่ทำชิปเองมากขึ้น · '
+    +'ผมถือมันซ้ำอีกทางผ่าน IVV อยู่แล้ว (NVDA >8% ของ S&P 500)'},
+
+ {sym:'AVGO',name:'Broadcom',px:422.40,target:527.88,conviction:5,tag:'ถืออยู่แล้ว 4.5%',
+  why:'ออกแบบชิป AI เฉพาะทาง (XPU) ให้ hyperscaler รายได้ AI ไตรมาสล่าสุด 10.8 พันล้าน +143% '
+    +'เป้าทั้งปี ~56 พันล้าน (+180%) และตั้งเป้าปี 2027 เกิน 100 พันล้าน · นักวิเคราะห์ 92% ให้ซื้อ forward P/E 21 เท่า',
+  catalyst:'งบ Q3 FY2026 ต้นเดือน ก.ย. 2026',
+  risk:'ลูกค้ากระจุกมาก · เป้า 100 พันล้านปี 2027 ถูกคิดรวมในราคาไปแล้วบางส่วน · '
+    +'ทับซ้อนกับ NVDA และ TSM ที่ผมถืออยู่ — ทั้งสามโตจากเงินก้อนเดียวกัน'},
+
+ {sym:'VRT',name:'Vertiv Holdings',px:222.40,target:375.71,conviction:4,tag:'ยังไม่ได้ถือ',
+  why:'ทำระบบจ่ายไฟและระบายความร้อนให้ดาต้าเซ็นเตอร์ ทุกแร็ค GPU ที่ติดตั้งต้องใช้ของแบบนี้ '
+    +'เป็นการเล่นธีม AI โดยไม่ต้องเดาว่าใครจะชนะสงครามชิป · นักวิเคราะห์ 34 รายให้เป้าเฉลี่ย 375.71',
+  catalyst:'ยอดสั่งซื้อ (backlog) รายไตรมาส · แผน capex ของ hyperscaler',
+  risk:'รายได้ผูกกับรอบ capex ของลูกค้าไม่กี่ราย ถ้าการสร้างดาต้าเซ็นเตอร์ชะลอ คำสั่งซื้อหายทันที '
+    +'และราคาขึ้นมามากแล้ว ความคาดหวังถูกตั้งไว้สูง'}
+],
+
+/* โซน B — หุ้นซิ่ง: เหวี่ยงแรงมาก ส่วนใหญ่ยังไม่มีกำไร ขึ้นลงตามข่าวและความคาดหวัง */
+spicy:[
+ {sym:'IONQ',name:'IonQ',px:34.93,target:69.11,conviction:2,tag:'ควอนตัมคอมพิวติ้ง',
+  why:'หนึ่งในผู้นำคอมพิวเตอร์ควอนตัมที่จดทะเบียนในตลาด งบ Q2 2026 ออกมาดีกว่าคาดและปรับเป้าทั้งปีขึ้น '
+    +'หุ้นพุ่งแรงหลังประกาศ · นักวิเคราะห์ 12 รายให้ consensus "Strong Buy" เป้าเฉลี่ย 69.11',
+  catalyst:'ความคืบหน้าจำนวนคิวบิตและอัตราความผิดพลาด · สัญญากับหน่วยงานรัฐ',
+  risk:'ควอนตัมยังเป็นเทคโนโลยีที่ห่างจากการใช้งานจริงเชิงพาณิชย์อีกหลายปี รายได้ปัจจุบันเล็กมากเมื่อเทียบกับมูลค่าบริษัท '
+    +'· ราคาขับเคลื่อนด้วยความคาดหวังล้วน ๆ · Jefferies เพิ่งลดเป้าจาก 85 เหลือ 75 เมื่อ 6 ส.ค. '
+    +'สังเกตว่าแม้แต่คนที่เชียร์ก็เริ่มลดเป้า'},
+
+ {sym:'ACHR',name:'Archer Aviation',px:6.32,target:11.06,conviction:1,tag:'แท็กซี่บินไฟฟ้า',
+  why:'ผู้พัฒนาเครื่องบิน eVTOL สำหรับบริการแท็กซี่ทางอากาศ ถ้าได้ใบรับรองจาก FAA และเปิดบริการได้จริง '
+    +'ตลาดที่รออยู่ใหญ่มาก',
+  catalyst:'การรับรองจาก FAA · เที่ยวบินเชิงพาณิชย์เที่ยวแรก',
+  risk:'ยังแทบไม่มีรายได้เชิงพาณิชย์และเผาเงินสดต่อเนื่อง ถ้าใบอนุญาตล่าช้าหรือต้องระดมทุนด้วยการออกหุ้นใหม่ '
+    +'ผู้ถือหุ้นเดิมโดน dilute และราคาลงได้เกิน 50% · ราคาแค่ 6 ดอลลาร์แปลว่าตลาดยังไม่เชื่อว่าจะสำเร็จ'},
+
+ {sym:'OKLO',name:'Oklo',px:50.82,target:86.95,conviction:2,tag:'เตาปฏิกรณ์นิวเคลียร์จิ๋ว',
+  why:'ทำเตาปฏิกรณ์นิวเคลียร์ขนาดเล็ก (SMR) ป้อนไฟให้ดาต้าเซ็นเตอร์ AI โดยเฉพาะ '
+    +'ธีมนี้ร้อนเพราะ AI กินไฟมหาศาลจนไฟฟ้ากลายเป็นคอขวด · นักวิเคราะห์ 25 รายให้ consensus "Buy" เป้าเฉลี่ย 86.95',
+  catalyst:'ใบอนุญาตจาก NRC · สัญญาขายไฟกับ hyperscaler',
+  risk:'ยังไม่มีเตาปฏิกรณ์ที่เดินเครื่องจริงและยังไม่มีรายได้ กว่าจะสร้างเสร็จใช้เวลาหลายปี '
+    +'· กลุ่มนี้เคยเด้ง +22.7% ในสัปดาห์เดียวจากข่าวเดียว แปลว่ามันลงได้เร็วเท่ากัน '
+    +'· ความเสี่ยงด้านกฎระเบียบสูงมาก ข่าวร้ายเรื่องใบอนุญาตครั้งเดียวจบ'},
+
+ {sym:'RKLB',name:'Rocket Lab',px:80.04,target:105.06,conviction:3,tag:'ถืออยู่แล้ว 4.4%',
+  why:'จรวดเบอร์ 2 ของสหรัฐ งบ Q2 รายได้ 234 ล้าน +62% backlog ทำสถิติ 2.36 พันล้าน +137% '
+    +'เพิ่งได้สัญญา Space Force 397 ล้าน · เป็นตัวเดียวในพอร์ตที่ไม่ผูกกับธีม AI',
+  catalyst:'เที่ยวบินแรกของจรวด Neutron (บริษัทตั้งเป้าไตรมาส 4/2026)',
+  risk:'ยังขาดทุนทุกไตรมาส (Q2 ขาดทุน 49.3 ล้าน แย่กว่าคาด) · ตลาดพนัน Kalshi ให้โอกาสแค่ 14% ว่า Neutron '
+    +'จะได้บินก่อนปี 2027 ควรเตรียมใจว่าเลื่อน · ถ้าเที่ยวแรกล้มเหลว ราคาลงแรง'},
+
+ {sym:'ASTS',name:'AST SpaceMobile',px:71.94,target:80.48,conviction:2,tag:'⚠️ ตัวอย่างสอนใจ',
+  why:'ดาวเทียมที่ต่อสัญญาณมือถือตรงจากอวกาศ เป็นหุ้นที่คนพูดถึงกันเยอะมากในโซเชียล '
+    +'ผมใส่ไว้ไม่ใช่เพราะเชียร์ แต่เพื่อให้เห็นตัวเลขจริง',
+  catalyst:'การปล่อยดาวเทียมชุดถัดไป · ดีลกับผู้ให้บริการมือถือ',
+  risk:'ดูตัวเลขให้ดี: นักวิเคราะห์ 13 รายให้ consensus แค่ "Hold" และเป้าเฉลี่ยสูงกว่าราคาปัจจุบันแค่ ~12% '
+    +'ทั้งที่เป็นหุ้นที่โซเชียลพูดถึงมากที่สุดตัวหนึ่ง — เวลากระแสในโซเชียลแรงแต่นักวิเคราะห์เฉย ๆ '
+    +'มักแปลว่าราคาวิ่งไปไกลกว่าพื้นฐานแล้ว นี่คือสัญญาณที่ควรจำ'}
+],
+
+/* ราคาปิดล่าสุดของหุ้นในพอร์ต — [ราคา, %เปลี่ยน 1 วัน, ชื่อบริษัท] */
+px:{
+  IVV :[776.74,  0.00,'iShares Core S&P 500 ETF'],
+  PLTR:[175.23,  1.87,'Palantir Technologies'],
+  MU  :[861.00, -1.89,'Micron Technology'],
+  CRWV:[ 88.19, -2.74,'CoreWeave'],
+  MSFT:[506.06,  1.21,'Microsoft'],
+  AVGO:[422.40, -1.25,'Broadcom'],
+  NVDA:[217.55, -2.86,'NVIDIA'],
+  RKLB:[ 80.04, -3.37,'Rocket Lab'],
+  TSM :[418.47, -0.37,'Taiwan Semiconductor'],
+  SNDK:[1237.92, 2.12,'SanDisk'],
+  AMZN:[278.09,  1.32,'Amazon.com']
+},
+
+sources:[
+ ['ภาวะตลาด 11 ส.ค. 2026','https://www.schwab.com/learn/story/stock-market-update-open'],
+ ['เป้าราคานักวิเคราะห์ NVDA/AVGO','https://intellectia.ai/blog/ai-stocks-market-analysis-august-2026'],
+ ['เป้าราคา RKLB','https://public.com/stocks/rklb/forecast-price-target'],
+ ['เป้าราคา VRT','https://stockanalysis.com/stocks/vrt/forecast/'],
+ ['เป้าราคา IONQ','https://stockanalysis.com/stocks/ionq/forecast/'],
+ ['เป้าราคา OKLO','https://stockanalysis.com/stocks/oklo/forecast/'],
+ ['เป้าราคา ASTS','https://stockanalysis.com/stocks/asts/forecast/'],
+ ['หุ้นเล็กธีมควอนตัม/นิวเคลียร์/อวกาศ','https://tickeron.com/trading-investing-101/15-innovative-small-caps-to-watch-in-2026-the-innovation-report/'],
+ ['ความกระจุกตัวของ S&P 500','https://finance.yahoo.com/markets/article/ai-mania-is-fueling-bubble-like-concentration-in-the-sp-500-135754198.html']
+]
+};
+/* ===DAILY_DATA_END=== */
+
+/* ============ STATE ============ */
+const KEY='stockdash_v1';
+/* พอร์ตจริงของ Namo — ข้อมูลจาก Dime! ณ 11 ส.ค. 2569 09:15 น. */
+const SEED=[
+  {sym:'IVV', qty:0.0793938, avg:751.9481},
+  {sym:'PLTR',qty:0.1112722, avg:133.9058},
+  {sym:'MU',  qty:0.0188870, avg:946.6853},
+  {sym:'CRWV',qty:0.1108964, avg:80.5256},
+  {sym:'MSFT',qty:0.0156463, avg:380.92},
+  {sym:'AVGO',qty:0.0160500, avg:371.34},
+  {sym:'NVDA',qty:0.0304514, avg:196.05},
+  {sym:'RKLB',qty:0.0819469, avg:72.73},
+  {sym:'TSM', qty:0.0142237, avg:419.02},
+  {sym:'SNDK',qty:0.0043824, avg:1360.00},
+  {sym:'AMZN',qty:0.0123869, avg:239.77}
+];
+/* ราคาจากบล็อก DAILY ด้านบน — ใช้ได้ทันทีโดยไม่ต้องมี API key */
+const T=Date.parse('2026-08-11T09:15:00+07:00');
+const SEEDQ={};
+for(const s in DAILY.px){const[p,c,n]=DAILY.px[s];
+  SEEDQ[s]={price:p,chgPct:c,prevClose:p/(1+c/100),name:n,
+    dayLow:null,dayHigh:null,yrLow:null,yrHigh:null,mcap:null,pe:null,eps:null,vol:null};}
+
+const NOTESEED={
+IVV:`📌 THESIS — แกนพอร์ต
+ETF อิงดัชนี S&P 500 ค่าธรรมเนียม 0.03%/ปี ถือ 500 บริษัทใหญ่สุดของสหรัฐ ส่วนนี้ไม่ต้องคิดมาก DCA ไปเรื่อย ๆ
+
+📊 ตัวเลขล่าสุด (11 ส.ค. 2026)
+ราคา 776.74 · ต้นทุนผม 751.95 · +3.30% · คิดเป็น 41.14% ของพอร์ต
+
+⚠️ ความเสี่ยงที่คนส่วนใหญ่มองข้าม
+IVV ไม่ได้ "กระจายเสี่ยง" อย่างที่ชื่อทำให้รู้สึก ณ กลางปี 2026:
+· หุ้น 10 ตัวใหญ่สุดกินน้ำหนักดัชนีถึง ~41% — เป็นสถิติสูงสุด และสูงกว่าจุดพีคฟองสบู่ดอทคอมปี 2000 ที่ 27%
+· หุ้นกลุ่มที่เกี่ยวกับ AI คิดเป็นราว 40-45% ของมูลค่าตลาดทั้งดัชนี NVDA ตัวเดียวเกิน 8%
+· Shiller CAPE อยู่ราว 41-42 ใกล้ระดับสูงสุดในประวัติศาสตร์ (แพงกว่านี้มีแค่ปี 1999)
+แปลว่า เวลาผมซื้อ IVV ผมกำลังซื้อ AI เพิ่มอีกทางโดยไม่รู้ตัว — พอไปบวกกับ NVDA/AVGO/TSM/MU ที่ถือแยก ความเสี่ยงมันซ้อนกัน
+
+📅 CATALYST
+ไม่มีรายตัว ตัวแปรคือ Fed, เงินเฟ้อ, และผลประกอบการกลุ่ม mega-cap
+
+💼 แผนของผม
+DCA $1,000/เดือนต่อไปโดยไม่ต้องดูราคา — ส่วนนี้ห้ามเอาไปเทรดเด็ดขาด`,
+
+PLTR:`📌 THESIS
+ขายซอฟต์แวร์วิเคราะห์ข้อมูล (Foundry/Gotham/AIP) ให้รัฐบาลสหรัฐและองค์กรใหญ่ จุดแข็งคือลูกค้าย้ายหนียาก เพราะระบบฝังลึกในการทำงาน
+
+📊 ตัวเลขล่าสุด — งบ Q2 2026 (3 ส.ค. 2026)
+· รายได้ 1.935 พันล้าน +93% YoY
+· ฝั่งพาณิชย์สหรัฐ 764 ล้าน +149% YoY ← ตัวเลขที่สำคัญที่สุด แปลว่าโตได้โดยไม่พึ่งงบรัฐ
+· ฝั่งรัฐบาลสหรัฐ 809 ล้าน +90%
+· ปรับเป้าทั้งปี 2026 ขึ้นเป็น 8.150-8.158 พันล้าน (+82%) · FCF 4.50-4.70 พันล้าน
+· Rule of 40 = 155% (ปกติ 40 ถือว่าดีแล้ว)
+ราคา 175.23 · ต้นทุนผม 133.91 · +30.86% · 13.01% ของพอร์ต
+
+⚠️ ความเสี่ยง
+· นี่คือหุ้นที่ "ธุรกิจดีมาก" แต่ "ราคาแพงมาก" คนละเรื่องกัน — ต่อให้บริษัททำได้ตามเป้าทุกอย่าง ราคาก็ยังลงได้ถ้าตลาดยอมจ่าย multiple น้อยลง
+· ยังโตด้วยฐานลูกค้าที่กระจุก งบรัฐบาลถูกตัดได้ตามการเมือง
+· โตระดับ 90% รักษาไว้ไม่ได้ตลอด วันที่ตัวเลขชะลอจาก 93% เหลือ 50% ตลาดจะตีความว่า "แย่ลง" ทั้งที่ยังโตเร็วมาก
+
+📅 CATALYST
+งบ Q3 2026 ราวต้นเดือน พ.ย. · ข่าวสัญญากับกระทรวงกลาโหม
+
+💼 สถานะ
+กำไรมากสุดในพอร์ตและเป็นโพซิชันใหญ่อันดับ 2 ถ้ามันขึ้นต่อจนน้ำหนักเกิน 15-18% ควรคิดเรื่องขายบางส่วนไม่ใช่ซื้อเพิ่ม`,
+
+MU:`📌 THESIS
+ผู้ผลิตหน่วยความจำ DRAM/NAND และที่สำคัญคือ HBM ซึ่งเป็นชิ้นส่วนบังคับของการ์ด AI ทุกใบ
+
+📊 ตัวเลขล่าสุด — งบ (24 มิ.ย. 2026)
+· รายได้ทำสถิติ 41.46 พันล้าน · ให้เป้าไตรมาสถัดไป 50.0 พันล้าน
+· กำลังผลิต HBM ปี 2026 ขายหมดแล้วทั้งปี ราคาล็อกไว้เรียบร้อย
+· ตลาด HBM คาดโตเป็น ~62 พันล้านในปี 2026 และ ~100 พันล้านในปี 2028
+ราคา 861.00 · ต้นทุนผม 946.69 · -9.05% · 10.85% ของพอร์ต
+
+⚠️ ความเสี่ยง — อ่านให้ดี นี่คือบทเรียนที่แพงที่สุดในพอร์ตนี้
+· ราคาหุ้นเคยขึ้นไปแตะราว 1,250-1,300 ช่วงมิ.ย. 2026 ตอนนี้ 861 = ลงมาแล้วราว -32% จากจุดสูงสุด ทั้งที่งบออกมาดีทำสถิติ นี่คือสัญญาณคลาสสิกว่า "ข่าวดีถูกซื้อไปล่วงหน้าหมดแล้ว"
+· เมมโมรีเป็นธุรกิจ "วัฏจักร" ไม่ใช่ธุรกิจ "โตทางเดียว" — ราคา DRAM/NAND ขึ้นแรงแล้วลงแรงเป็นรอบ ๆ ทุก 2-3 ปี ตอนกำไรพีค P/E จะดูถูกมาก ซึ่งเป็นกับดัก ไม่ใช่โอกาส
+· คู่แข่งจีน (CXMT/YMTC) เพิ่มกำลังผลิตอยู่ ทุกครั้งที่มีข่าวนี้หุ้นกลุ่มเมมโมรีจะโดนถล่ม
+· ผมถือ MU (10.85%) + SNDK (3.62%) = 14.5% ของพอร์ตอยู่ในวัฏจักรเดียวกัน ทั้งคู่ติดลบ ~9% เท่ากันเป๊ะ นั่นไม่ใช่เรื่องบังเอิญ
+
+📅 CATALYST
+งบไตรมาสถัดไปราวปลายเดือน ก.ย. 2026 · ตัวเลขราคาสัญญา DRAM รายเดือนจาก TrendForce
+
+💼 สิ่งที่ต้องซื่อสัตย์กับตัวเอง
+ผมซื้อที่ 946.69 ซึ่งเป็นหลังจุดพีคแล้ว = ซื้อตามข่าว ไม่ใช่ซื้อตาม thesis
+คำถามที่ต้องตอบก่อนจะซื้อถัวเพิ่ม: ผมเชื่อว่า "ราคาเมมโมรียังไม่ถึงจุดพีคของรอบนี้" จริงหรือเปล่า — ถ้าตอบไม่ได้ อย่าถัว`,
+
+CRWV:`📌 THESIS
+ให้เช่า GPU สำหรับงาน AI (neocloud) ลูกค้าคือบริษัท AI รายใหญ่ที่ต้องการ compute เร็วกว่าที่ cloud เจ้าใหญ่จัดให้ได้
+
+📊 ตัวเลขล่าสุด
+· Backlog ที่เซ็นสัญญาแล้ว 99.4 พันล้าน — ตัวเลขนี้คือหัวใจของ thesis
+· Q1 2026 ปิดไตรมาสด้วยหนี้เกือบ 25 พันล้าน · D/E 738% · current ratio 0.3x
+· ดอกเบี้ยจ่าย Q2 คาด 650-730 ล้าน/ไตรมาส · capex ทั้งปี 2026 คาด 31-35 พันล้าน
+· ตลาดคาด Q2: รายได้ 2.56 พันล้าน (จาก 1.21 พันล้านปีก่อน) แต่ยัง "ขาดทุน" EPS -1.21
+ราคา 88.19 · ต้นทุนผม 80.53 · +9.52% · 6.52% ของพอร์ต
+
+⚠️ ความเสี่ยง — ตัวเสี่ยงที่สุดในพอร์ต
+· โมเดลธุรกิจคือ "กู้เงินมาซื้อ GPU แล้วปล่อยเช่า" ถ้าราคาเช่า GPU ตกหรือดอกเบี้ยขึ้น สมการพังทันที
+· current ratio 0.3x แปลว่าเงินสดระยะสั้นน้อยกว่าหนี้ที่ต้องจ่ายระยะสั้น = ต้องพึ่งการกู้ใหม่ตลอดเวลา
+· GPU เสื่อมค่าเร็ว ของที่ซื้อวันนี้อีก 3 ปีอาจเช่าได้ราคาครึ่งเดียว
+· ลูกค้ากระจุกตัวไม่กี่ราย ถ้ารายใหญ่รายเดียวยกเลิก backlog หายเป็นก้อน
+
+📅 CATALYST — ด่วน
+งบ Q2 2026 ประกาศ 11 ส.ค. 2026 หลังตลาดปิด = คืนนี้ ราคาน่าจะเหวี่ยงแรง
+จุดที่ต้องดูไม่ใช่ "รายได้โตไหม" (โตแน่) แต่คือ margin, ดอกเบี้ยจ่าย, และ backlog เพิ่มเท่าไร
+
+💼 แผน
+ห้ามซื้อเพิ่มก่อนดูงบคืนนี้ · ถ้าจะถือต่อ ต้องยอมรับว่าตัวนี้อาจ -50% ได้ในวันเดียว ขนาดโพซิชัน 6.5% ถือว่ากำลังพอดี อย่าให้ใหญ่กว่านี้`,
+
+MSFT:`📌 THESIS
+ซอฟต์แวร์องค์กร + คลาวด์ Azure + ถือหุ้น OpenAI รายได้ส่วนใหญ่เป็น subscription ที่ลูกค้าเลิกยาก = คุณภาพกำไรสูงมาก
+
+📊 ตัวเลขล่าสุด — งบ FQ4 2026 (29 ก.ค. 2026)
+· รายได้ 90.01 พันล้าน +18% YoY (เหนือคาดที่ ~87.6)
+· Azure โต 43% และแตะรายได้ระดับ 100 พันล้าน/ปี
+· ธุรกิจ AI ใน Azure ทำ run rate เกิน 37 พันล้าน +123% YoY
+· Copilot มีที่นั่งแบบจ่ายเงิน 30 ล้าน seat (~10 พันล้าน/ปี)
+· หุ้นเด้ง +8% หลังประกาศงบ
+ราคา 506.06 · ต้นทุนผม 380.92 · +32.85% · 5.28% ของพอร์ต
+
+⚠️ ความเสี่ยง
+· capex มหาศาล — ปี 2026 ราว 190 พันล้าน และตั้งเป้า FY2027 ที่ 255-260 พันล้าน เงินก้อนนี้กดกระแสเงินสดอิสระและต้องพิสูจน์ว่าคืนทุนได้
+· ถ้าตลาดเริ่มสงสัยว่า "ลงทุน AI แล้วได้กำไรกลับมาจริงไหม" หุ้นกลุ่มนี้จะโดนลงโทษพร้อมกันหมด
+· โตช้ากว่า PLTR/CRWV มาก — ตัวนี้ไม่ใช่หุ้นซิ่ง อย่าไปคาดหวังผิดประเภท
+
+📅 CATALYST
+งบ FQ1 2027 ราวปลายเดือน ต.ค. · ตัวเลข Azure growth คือตัวเดียวที่ตลาดสนใจจริง ๆ
+
+💼 มุมมอง
+กำไร % สูงสุดในพอร์ต (+32.85%) แต่ขนาดแค่ 5.28% = ได้เงินจริงแค่ 1.96 ดอลลาร์
+นี่คือหลักฐานชัดที่สุดว่า "เลือกถูกแต่ลงน้อยเกินไป" ไม่ช่วยอะไร — ถ้าเชื่อจริงควรลงหนักกว่านี้`,
+
+AVGO:`📌 THESIS
+สองขา: (1) ออกแบบชิป AI เฉพาะทาง (XPU) ให้ hyperscaler เช่น Google/Meta — เป็นทางเลือกแทน GPU ของ NVDA (2) ชิปเครือข่าย Ethernet สำหรับดาต้าเซ็นเตอร์ + ธุรกิจซอฟต์แวร์ VMware
+
+📊 ตัวเลขล่าสุด
+· Q1 FY2026: รายได้ 19.31 พันล้าน +29% · เซมิ 12.5 พันล้าน +52% · รายได้ AI 8.4 พันล้าน +106%
+· Q2 FY2026: รายได้ 22.19 พันล้าน +48% · ชิป AI 10.8 พันล้าน +143%
+· เป้าทั้งปี FY2026: รายได้ AI ~56 พันล้าน (+180%) · เป้า FY2027 เกิน 100 พันล้าน
+ราคา 422.40 · ต้นทุนผม 371.34 · +13.75% · 4.52% ของพอร์ต
+
+⚠️ ความเสี่ยง
+· ลูกค้ากระจุกมาก — รายได้ AI ส่วนใหญ่มาจาก hyperscaler ไม่กี่ราย ถ้ารายใดชะลอคำสั่งซื้อ ตัวเลขกระโดดลงทันที
+· เป้า "100 พันล้านในปี 2027" ถูก price in ไปในราคาแล้วบางส่วน ถ้าทำไม่ถึงจะเจ็บ
+· เคยมีเคสงบดีแต่หุ้นลง (Q2 FY2026 รายได้ AI โต 143% แต่หุ้นร่วง) = สัญญาณว่าความคาดหวังสูงมาก
+
+📅 CATALYST
+งบ Q3 FY2026 ราวต้นเดือน ก.ย. 2026
+
+💼 มุมมอง
+ทับซ้อนกับ NVDA/TSM ในพอร์ต — ทั้งสามตัวโตจากเงินก้อนเดียวกันคือ capex AI ของ hyperscaler`,
+
+NVDA:`📌 THESIS
+เจ้าของแทบทั้งตลาด GPU สำหรับเทรน AI คูเมืองจริงไม่ใช่ตัวชิปแต่คือ CUDA — ซอฟต์แวร์ที่นักพัฒนา AI ทั้งโลกเขียนอยู่บนนั้นมาสิบกว่าปี ย้ายหนียาก
+
+📊 ตัวเลขล่าสุด
+· Data Center รายได้ทำสถิติ 51.2 พันล้านในไตรมาสหนึ่ง +66% YoY
+· งบล่าสุด (20 พ.ค. 2026) รายได้ดาต้าเซ็นเตอร์โตเกือบเท่าตัว YoY — แต่หุ้นกลับลงหลังประกาศ
+· GB300 ขึ้นมาเป็นราว 2 ใน 3 ของรายได้ Blackwell แล้ว · สถาปัตยกรรมใหม่ Rubin เริ่มรับรู้รายได้ไตรมาสหน้า
+· Jensen: "Blackwell sales are off the charts, cloud GPUs are sold out"
+ราคา 217.55 · ต้นทุนผม 196.05 · +10.97% · 4.42% ของพอร์ต
+
+⚠️ ความเสี่ยง
+· "งบดีแต่หุ้นลง" เกิดขึ้นซ้ำแล้วซ้ำอีก แปลว่าราคาปัจจุบันสะท้อนความสมบูรณ์แบบไว้แล้ว ทำได้ตามคาดยังไม่พอ ต้องเหนือคาดเสมอ
+· ลูกค้ารายใหญ่ (Google, Amazon, Meta) ต่างพัฒนาชิปของตัวเองอยู่ — ซึ่งบางส่วนสั่งผ่าน AVGO ที่ผมก็ถือ
+· ข้อจำกัดการส่งออกไปจีนเปลี่ยนได้ตามการเมือง
+· NVDA เป็นหุ้นน้ำหนักเกิน 8% ของ S&P 500 → ผมถือมันซ้ำอีกทางผ่าน IVV อยู่แล้ว
+
+📅 CATALYST — สำคัญ
+งบประกาศ 26 ส.ค. 2026 หลังตลาดปิด นี่คืออีเวนต์ที่ขยับทั้งตลาด ไม่ใช่แค่หุ้นตัวเดียว
+
+💼 แผน
+ไม่ซื้อเพิ่มก่อน 26 ส.ค. · ถ้าอยากเพิ่ม รอดูปฏิกิริยาหลังงบดีกว่าเดาก่อนงบ`,
+
+RKLB:`📌 THESIS
+บริษัทจรวดเบอร์ 2 ของสหรัฐรองจาก SpaceX จรวดเล็ก Electron ปล่อยจริงสม่ำเสมอแล้ว เดิมพันใหญ่คือจรวดกลาง Neutron ที่จะแข่งกับ Falcon 9 โดยตรง
+
+📊 ตัวเลขล่าสุด — งบ Q2 2026 (10 ส.ค. 2026)
+· รายได้ 234 ล้าน +62% YoY — เหนือคาดเล็กน้อย (คาด ~231)
+· ขาดทุนสุทธิ 49.3 ล้าน หรือ -0.08/หุ้น — แย่กว่าคาดที่ -0.05 ← พลาดตรงนี้
+· Backlog ทำสถิติ 2.36 พันล้าน +137% YoY
+· เป้า Q3: รายได้ 250-265 ล้าน
+· หุ้นร่วง ~6% หลังตลาดปิด
+ราคา 80.04 · ต้นทุนผม 72.73 · +10.05% · 4.38% ของพอร์ต
+
+⚠️ ความเสี่ยง
+· ยังขาดทุนอยู่ทุกไตรมาส บริษัทที่ไม่มีกำไรจะเจ็บหนักที่สุดเวลาดอกเบี้ยขึ้นหรือตลาดกลัวความเสี่ยง
+· Neutron คือทั้งหมดของ thesis — บริษัทบอกว่าบินครั้งแรกไตรมาส 4 ปี 2026 แต่ตลาดพนัน Kalshi ให้โอกาสแค่ 14% ว่าจะได้บินก่อนปี 2027 ช่องว่างนี้ใหญ่มาก ควรเตรียมใจว่าเลื่อน
+· ถ้าเที่ยวบินแรกล้มเหลว (ซึ่งเป็นเรื่องปกติของจรวดใหม่) หุ้นลงแรงแน่นอน
+· ไม่เกี่ยวกับ AI = เป็นตัวเดียวในพอร์ตที่กระจายความเสี่ยงจริง ๆ ข้อนี้เป็นข้อดี
+
+📅 CATALYST
+วันปล่อย Neutron เที่ยวแรก (เป้าไตรมาส 4/2026 แต่มีโอกาสเลื่อนสูง)
+
+💼 แผน
+ถือด้วยเงินที่หายได้ · อย่าเพิ่มขนาดจนเกิน 5% ของพอร์ต`,
+
+TSM:`📌 THESIS
+โรงงานรับจ้างผลิตชิปที่ล้ำที่สุดในโลก NVDA, AVGO, AAPL, AMD ออกแบบชิปแล้วต้องมาจ้าง TSMC ผลิต = ใครชนะสงคราม AI ก็ต้องจ่ายเงินให้ TSMC อยู่ดี "ขายจอบขายเสียมให้คนขุดทอง"
+
+📊 ตัวเลขล่าสุด — งบ Q2 2026 (16 ก.ค. 2026)
+· รายได้ 39.45 พันล้าน +36% YoY · กำไรสุทธิ ~21.9 พันล้าน +77.4% ← กำไรโตเร็วกว่ารายได้เท่าตัว = อำนาจต่อรองราคาสูงมาก
+· รายได้เดือน มิ.ย. +68% YoY สูงสุดของปี
+· สัดส่วนรายได้ตามเทคโนโลยี: 3nm 30% · 5nm 33% · 2nm 3% (เพิ่งเริ่มไตรมาสแรก)
+· ชิป 2nm ตั้งราคาแพงกว่า 3nm ราว 10-20%
+· ปรับ capex ปี 2026 ขึ้นเป็น 60-64 พันล้าน (เดิม 52-56)
+ราคา 418.47 · ต้นทุนผม 419.02 · -0.13% (เท่าทุน) · 3.97% ของพอร์ต
+
+⚠️ ความเสี่ยง
+· ความเสี่ยงภูมิรัฐศาสตร์ไต้หวัน-จีน — นี่คือเหตุผลเดียวที่หุ้นตัวนี้เทรดถูกกว่าคุณภาพของมันมาตลอด ประเมินเป็นตัวเลขไม่ได้ แต่ถ้าเกิดขึ้นคือความเสียหายถาวร
+· capex ที่พุ่งขึ้นเรื่อย ๆ กดกระแสเงินสดอิสระ
+· รายได้ผูกกับวงจร capex ของลูกค้าไม่กี่ราย
+
+📅 CATALYST
+รายงานรายได้รายเดือน (ทุกวันที่ 10 ของเดือน) · งบ Q3 ราวกลางเดือน ต.ค.
+
+💼 มุมมอง
+คุณภาพธุรกิจดีที่สุดในกลุ่มเซมิที่ผมถือ แต่ผมให้น้ำหนักน้อยสุด (3.97%) ขณะที่ให้ MU ซึ่งเป็นธุรกิจวัฏจักรถึง 10.85% — น้ำหนักนี้กลับหัวกับคุณภาพ ควรทบทวน`,
+
+SNDK:`📌 THESIS
+ผู้ผลิตหน่วยความจำแฟลช NAND และ SSD ได้ประโยชน์จากดาต้าเซ็นเตอร์ AI ที่ต้องการที่เก็บข้อมูลมหาศาล
+
+📊 ตัวเลขล่าสุด — งบไตรมาสล่าสุด (5 ส.ค. 2026)
+· กำไรต่อหุ้น (adjusted) 39.25 เหนือคาดที่ 34.37
+· ทั้งปีงบประมาณ 2026 นักวิเคราะห์ประเมิน EPS ~66.51 = โตราว 22 เท่าจากปีก่อน
+· แต่ "เป้ารายได้ต่ำกว่าที่ตลาดคาด" → หุ้นร่วงหลังประกาศงบ
+· Gartner คาดราคา NAND ทั้งปี 2026 +234% และจะยังไม่คลายจนถึงปลายปี 2027
+· ราคาเป้าหมายเฉลี่ยนักวิเคราะห์ ~2,400 (สูงสุด 3,050-3,250)
+ราคา 1,237.92 · ต้นทุนผม 1,360.00 · -8.98% · 3.62% ของพอร์ต
+
+⚠️ ความเสี่ยง — และเป็นบทเรียนเรื่อง "P/E ต่ำ = กับดัก"
+· ที่ราคา 1,237.92 หาร EPS ~66.51 ได้ P/E ราว 18-19 เท่า ซึ่งดู "ถูก" มาก
+  แต่นี่คือ P/E บนกำไรที่พีคของวัฏจักร — พอราคา NAND กลับตัวลง กำไรจะหดเร็วกว่าที่ราคาหุ้นลง ทำให้ P/E "ถูก" กลายเป็น "แพง" ในไม่กี่ไตรมาส นี่คือกับดักคลาสสิกของหุ้นวัฏจักร
+· หุ้นขึ้นมาแล้ว 574% ผมเข้าซื้อที่ 1,360 ซึ่งอยู่หลังการวิ่งรอบใหญ่ไปแล้ว
+· ราคา NAND +234% ในปีเดียวไม่ใช่เรื่องยั่งยืน มันคือภาวะขาดแคลนชั่วคราว ซึ่งจะจบเมื่อกำลังผลิตใหม่เข้ามา
+· ซ้ำซ้อนกับ MU โดยตรง — รวมกันสองตัว = 14.5% ของพอร์ตอยู่ในวัฏจักรเมมโมรีเดียวกัน
+
+📅 CATALYST
+ตัวเลขราคาสัญญา NAND รายเดือน · งบไตรมาสถัดไปราวปลายเดือน ต.ค.
+
+💼 สิ่งที่ควรทำ
+ตัดสินใจว่าจะถือ MU หรือ SNDK อย่างใดอย่างหนึ่ง ไม่ใช่ทั้งคู่ — ถือทั้งสองตัวไม่ได้เพิ่มโอกาส แต่เพิ่มขนาดเดิมพันเดียวกันเป็นสองเท่า`,
+
+AMZN:`📌 THESIS
+สามขา: อีคอมเมิร์ซ + AWS (คลาวด์ที่ใหญ่ที่สุดในโลก) + โฆษณา กำไรเกือบทั้งหมดมาจาก AWS กับโฆษณา ไม่ใช่จากการขายของ
+
+📊 ตัวเลขล่าสุด — งบ Q2 2026 (30 ก.ค. 2026)
+· รายได้ 200.6 พันล้าน +20% YoY — ทะลุ 200 พันล้านครั้งแรก
+· กำไรจากการดำเนินงาน 27.5 พันล้าน +43%
+· AWS โต 37% (รายได้ 42.2 พันล้าน, run rate 169 พันล้าน) — เร็วที่สุดตั้งแต่ปี 2021 และเหนือคาดที่ 31%
+· Backlog ของ AWS 496 พันล้าน
+· ปรับ capex ปี 2026 ขึ้นเป็น ~220 พันล้าน
+ราคา 278.09 · ต้นทุนผม 239.77 · +15.98% · 2.29% ของพอร์ต (เล็กสุด)
+
+⚠️ ความเสี่ยง
+· capex 220 พันล้านเป็นเงินมหาศาล ส่วนหนึ่งที่ต้องเพิ่มเพราะ "ราคาชิ้นส่วนหน่วยความจำแพงขึ้น"
+  ← จุดนี้น่าสนใจมาก: ต้นทุนที่ AMZN จ่ายเพิ่ม คือรายได้ของ MU กับ SNDK ที่ผมถืออยู่ ผมจึงอยู่ทั้งสองฝั่งของสมการเดียวกัน
+· ธุรกิจค้าปลีกอ่อนไหวกับกำลังซื้อผู้บริโภคและภาษีนำเข้า
+· ถูกจับตาเรื่องกฎหมายผูกขาดทั้งในสหรัฐและยุโรป
+
+📅 CATALYST
+งบ Q3 2026 ราวปลายเดือน ต.ค. · ตัวเลขที่ต้องดูคืออัตราโตของ AWS
+
+💼 มุมมอง
+เป็นโพซิชันเล็กสุด (2.29%) ทั้งที่เป็นหนึ่งในธุรกิจที่มั่นคงที่สุดที่ผมถือ — น้ำหนักไม่สอดคล้องกับความเชื่อ`
+};
+
+const DEF={provider:'twelvedata',apikey:'',holdings:SEED,
+  watchlist:['IVV','PLTR','MU','CRWV','MSFT','AVGO','NVDA','RKLB','TSM','SNDK','AMZN'],
+  notes:{},quotes:{},stamp:null};
+let S=load();
+if(!S.holdings||!S.holdings.length) S.holdings=SEED.map(h=>({...h}));
+if(!S.watchlist||!S.watchlist.length) S.watchlist=[...DEF.watchlist];
+if(!S.notes||!Object.keys(S.notes).length){S.notes={};for(const k in NOTESEED)S.notes[k]={body:NOTESEED[k],t:T}}
+/* ถ้าไฟล์ถูก scheduled task อัปเดตใหม่กว่าที่เก็บไว้ ให้ใช้ราคาจากไฟล์ทับของเดิม */
+if(!S.quotes||!Object.keys(S.quotes).length||!S.stamp||Date.parse(DAILY.stamp)>Date.parse(S.stamp)){
+  S.quotes=Object.assign({},S.quotes,JSON.parse(JSON.stringify(SEEDQ)));
+  S.stamp=DAILY.stamp; S.snap=true; save();
+}
+let series={};            // ticker -> [{d,c}]
+let selected=S.watchlist[0]||null;
+let range=365, pie=null, line=null;
+
+function load(){try{return Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return {...DEF}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:null};
+function usd(v,d=2){return v==null?'—':(v<0?'-$':'$')+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pct(v,d=2){return v==null?'—':(v>=0?'+':'')+v.toFixed(d)+'%'}
+function big(v){if(v==null)return '—';const a=Math.abs(v);
+  if(a>=1e12)return '$'+(v/1e12).toFixed(2)+'T';
+  if(a>=1e9)return '$'+(v/1e9).toFixed(2)+'B';
+  if(a>=1e6)return '$'+(v/1e6).toFixed(1)+'M';return usd(v,0)}
+const cls=v=>v==null?'mut':(v>0?'up':v<0?'down':'mut');
+function banner(html,type='info'){$('#banner').innerHTML=html?`<div class="msg ${type}">${html}</div>`:''}
+
+/* ============ DATA PROVIDERS ============ */
+async function jget(url){
+  let r,txt;
+  try{ r=await fetch(url); txt=await r.text(); }
+  catch(e){ throw new Error('ต่อเน็ตไม่ได้/ถูกบล็อก — '+e.message) }
+  let j=null; try{ j=JSON.parse(txt) }catch(e){}
+  const apiMsg = j&&(j.message||j['Error Message']||j.error);
+  if(!r.ok){
+    if(r.status===401||r.status===403)
+      throw new Error('API key ไม่ถูกยอมรับ (HTTP '+r.status+')'+(apiMsg?' — ผู้ให้บริการแจ้งว่า: "'+apiMsg+'"':'')
+        +' · เช็ก 3 อย่าง: (1) คัดลอก key มาครบไหม มีช่องว่าง/เครื่องหมายคำพูดติดมาหรือเปล่า'
+        +' (2) เลือกผู้ให้บริการตรงกับ key ที่ใช้หรือยัง (Twelve Data กับ FMP ใช้ key คนละอัน)'
+        +' (3) สมัครแล้วยืนยันอีเมลครบหรือยัง');
+    if(r.status===429) throw new Error('ใช้โควต้าหมดชั่วคราว (HTTP 429) — Twelve Data แพลนฟรีจำกัด 8 ครั้ง/นาที รอสัก 1 นาทีแล้วกดใหม่');
+    throw new Error('HTTP '+r.status+(apiMsg?' — '+apiMsg:''));
+  }
+  if(j&&j.status==='error') throw new Error((j.code?'['+j.code+'] ':'')+(j.message||'API error'));
+  if(j&&j['Error Message']) throw new Error(j['Error Message']);
+  if(j===null) throw new Error('ผู้ให้บริการตอบกลับมาไม่ใช่ JSON: '+txt.slice(0,120));
+  return j;
+}
+
+/* ทดสอบ key ด้วยคำขอเล็กที่สุด แล้วโชว์คำตอบดิบ */
+async function testKey(){
+  const k=S.apikey.trim();
+  if(!k){banner('ยังไม่มี key ในระบบ — พิมพ์ในช่องด้านบนแล้วกด "บันทึก key" ก่อน','warn');return}
+  const url = S.provider==='twelvedata'
+    ? `https://api.twelvedata.com/quote?symbol=AAPL&apikey=${k}`
+    : `https://financialmodelingprep.com/stable/quote?symbol=AAPL&apikey=${k}`;
+  banner('กำลังทดสอบ…','info');
+  try{
+    const r=await fetch(url); const t=await r.text();
+    banner(`<b>ผลทดสอบ ${S.provider}</b> · HTTP ${r.status} · ความยาว key ที่บันทึกไว้ ${k.length} ตัวอักษร<br>
+      <code style="font-size:11.5px;word-break:break-all">${t.slice(0,400).replace(/[<>]/g,'')}</code>`,
+      r.ok?'info':'err');
+  }catch(e){banner('ทดสอบไม่สำเร็จ: '+e.message,'err')}
+}
+
+/* --- ตัวจำกัดอัตราคำขอ: Twelve Data แพลนฟรี = 8 เครดิต/นาที (1 สัญลักษณ์ = 1 เครดิต) --- */
+let spent=[];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function spend(n){
+  if(S.provider!=='twelvedata') return;
+  for(;;){
+    const now=Date.now(); spent=spent.filter(t=>now-t<61000);
+    if(spent.length+n<=8) break;
+    const wait=Math.ceil((61000-(now-spent[0]))/1000);
+    banner(`โควต้าฟรีจำกัด 8 คำขอ/นาที — รออีก ${wait} วินาที แล้วจะดึงต่อให้อัตโนมัติ`,'warn');
+    await sleep(1500);
+  }
+  const t=Date.now(); for(let i=0;i<n;i++) spent.push(t);
+}
+const chunk=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o};
+
+/* --- quotes: returns {SYM:{price,prevClose,chgPct,name,dayLow,dayHigh,yrLow,yrHigh,mcap,pe,eps,vol}} --- */
+async function fetchQuotes(syms){
+  if(!syms.length) return {};
+  const k=S.apikey.trim(); const out={};
+  if(S.provider==='twelvedata'){
+    for(const grp of chunk(syms,8)){
+      await spend(grp.length);
+      const j=await jget(`https://api.twelvedata.com/quote?symbol=${grp.join(',')}&apikey=${k}`);
+      const items = grp.length===1 ? {[grp[0]]:j} : j;
+      for(const s of grp){
+        const q=items[s]; if(!q||q.status==='error') continue;
+        out[s]={price:num(q.close),prevClose:num(q.previous_close),chgPct:num(q.percent_change),
+          name:q.name||s,dayLow:num(q.low),dayHigh:num(q.high),
+          yrLow:num(q.fifty_two_week&&q.fifty_two_week.low),yrHigh:num(q.fifty_two_week&&q.fifty_two_week.high),
+          mcap:null,pe:null,eps:null,vol:num(q.volume)};
+      }
+      banner(`ดึงราคาแล้ว ${Object.keys(out).length}/${syms.length} ตัว…`,'info');
+    }
+  }else{
+    let arr;
+    try{arr=await jget(`https://financialmodelingprep.com/stable/quote?symbol=${syms.join(',')}&apikey=${k}`)}
+    catch(e){arr=await jget(`https://financialmodelingprep.com/api/v3/quote/${syms.join(',')}?apikey=${k}`)}
+    for(const q of (Array.isArray(arr)?arr:[])){
+      out[q.symbol]={price:num(q.price),prevClose:num(q.previousClose),
+        chgPct:num(q.changesPercentage!=null?q.changesPercentage:q.changePercentage),
+        name:q.name||q.symbol,dayLow:num(q.dayLow),dayHigh:num(q.dayHigh),
+        yrLow:num(q.yearLow),yrHigh:num(q.yearHigh),mcap:num(q.marketCap),
+        pe:num(q.pe),eps:num(q.eps),vol:num(q.volume)};
+    }
+  }
+  return out;
+}
+
+/* --- history: returns [{d:'YYYY-MM-DD',c:number}] oldest->newest --- */
+async function fetchHistory(sym){
+  const k=S.apikey.trim();
+  if(S.provider==='twelvedata'){
+    await spend(1);
+    const j=await jget(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=800&apikey=${k}`);
+    return (j.values||[]).map(v=>({d:v.datetime,c:parseFloat(v.close)})).reverse();
+  }
+  let j;
+  try{
+    j=await jget(`https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${sym}&apikey=${k}`);
+    const a=Array.isArray(j)?j:(j.historical||[]);
+    return a.map(v=>({d:v.date,c:parseFloat(v.price!=null?v.price:v.close)})).reverse();
+  }catch(e){
+    j=await jget(`https://financialmodelingprep.com/api/v3/historical-price-full/${sym}?serietype=line&apikey=${k}`);
+    return (j.historical||[]).map(v=>({d:v.date,c:parseFloat(v.close)})).reverse();
+  }
+}
+
+/* ============ REFRESH ============ */
+async function refreshAll(){
+  if(!S.apikey.trim()){banner('ยังไม่ได้ใส่ API key — ไปที่แท็บ <b>ตั้งค่า</b> เพื่อดูวิธีขอ key ฟรี','warn');return}
+  const syms=[...new Set([...S.holdings.map(h=>h.sym),...S.watchlist])];
+  if(!syms.length){banner('ยังไม่มีหุ้นในพอร์ตหรือ watchlist','info');return}
+  banner('กำลังดึงข้อมูล…','info');
+  try{
+    S.quotes=Object.assign({},S.quotes,await fetchQuotes(syms));
+    S.stamp=new Date().toISOString(); S.snap=false; save(); banner('');
+    renderAll();
+    if(selected) loadChart(selected);
+  }catch(e){banner('ดึงข้อมูลไม่สำเร็จ: '+e.message,'err')}
+}
+
+async function loadChart(sym){
+  selected=sym; renderWatch();
+  $('#chartTitle').textContent='กราฟราคา — '+sym;
+  if(!series[sym]){
+    if(!S.apikey.trim())return;
+    try{ series[sym]=await fetchHistory(sym); }
+    catch(e){ banner('โหลดกราฟ '+sym+' ไม่สำเร็จ: '+e.message,'err'); return }
+  }
+  drawLine(sym);
+}
+
+/* ============ RENDER: PORTFOLIO ============ */
+function renderPf(){
+  const b=$('#pfBody'); b.innerHTML='';
+  let tv=0,tc=0,tprev=0;
+  const rows=S.holdings.map(h=>{
+    const q=S.quotes[h.sym]||{};
+    const px=q.price, val=px!=null?px*h.qty:null, cost=h.avg*h.qty;
+    const prev=q.prevClose!=null?q.prevClose*h.qty:null;
+    if(val!=null){tv+=val; tc+=cost; if(prev!=null)tprev+=prev}
+    return {h,q,px,val,cost,prev,pl:val!=null?val-cost:null,plp:val!=null&&cost>0?(val-cost)/cost*100:null};
+  });
+  rows.sort((a,b2)=>(b2.val||0)-(a.val||0));
+  for(const r of rows){
+    const w=tv>0&&r.val!=null?r.val/tv*100:null;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="tick">${r.h.sym}<span class="nm">${(r.q.name||'').slice(0,34)}</span></td>
+      <td data-l="จำนวน"><input class="cell" data-e="qty" data-s="${r.h.sym}" value="${r.h.qty}"></td>
+      <td data-l="ต้นทุน/หุ้น"><input class="cell" data-e="avg" data-s="${r.h.sym}" value="${r.h.avg}"></td>
+      <td data-l="ราคา">${usd(r.px)}</td>
+      <td data-l="วันนี้" class="${cls(r.q.chgPct)}">${pct(r.q.chgPct)}</td>
+      <td data-l="มูลค่า">${usd(r.val)}</td>
+      <td data-l="กำไร/ขาดทุน" class="${cls(r.pl)}">${usd(r.pl)}</td>
+      <td data-l="%" class="${cls(r.plp)}"><span class="pill ${cls(r.plp)}">${pct(r.plp)}</span></td>
+      <td data-l="%พอร์ต" class="mut">${w==null?'—':w.toFixed(1)+'%'}</td>
+      <td><button class="sm ghost" data-del="${r.h.sym}" title="ลบ">✕</button></td>`;
+    b.appendChild(tr);
+  }
+  const pl=tv-tc, plp=tc>0?pl/tc*100:null;
+  const day=tprev>0?tv-tprev:null, dayp=tprev>0?day/tprev*100:null;
+  $('#k-val').textContent=usd(tv); $('#k-val2').textContent=S.holdings.length+' ตัวในพอร์ต';
+  $('#k-cost').textContent=usd(tc); $('#k-cost2').textContent='เงินที่ลงไปแล้ว';
+  $('#k-pl').textContent=usd(pl); $('#k-pl').className='val '+cls(pl);
+  $('#k-pl2').innerHTML=`<span class="${cls(plp)}">${pct(plp)}</span> จากต้นทุน`;
+  $('#k-day').textContent=usd(day); $('#k-day').className='val '+cls(day);
+  $('#k-day2').innerHTML=`<span class="${cls(dayp)}">${pct(dayp)}</span> วันนี้`;
+  drawPie(rows.filter(r=>r.val!=null));
+}
+
+function drawPie(rows){
+  const c=$('#pieChart'); if(pie)pie.destroy();
+  if(!rows.length){c.getContext('2d').clearRect(0,0,c.width,c.height);return}
+  const cols=['#5b8def','#22c55e','#f59e0b','#ef4444','#a855f7','#06b6d4','#ec4899','#84cc16','#f97316','#64748b'];
+  pie=new Chart(c,{type:'doughnut',
+    data:{labels:rows.map(r=>r.h.sym),datasets:[{data:rows.map(r=>r.val),
+      backgroundColor:rows.map((_,i)=>cols[i%cols.length]),borderColor:'#141922',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{position:'right',labels:{color:'#8b93a3',boxWidth:11,font:{size:11.5}}},
+        tooltip:{callbacks:{label:x=>' '+x.label+'  '+usd(x.parsed)}}}}});
+}
+
+/* ============ RENDER: WATCHLIST ============ */
+function renderWatch(){
+  const g=$('#wlGrid'); g.innerHTML='';
+  for(const s of S.watchlist){
+    const q=S.quotes[s]||{};
+    let pos=null;
+    if(q.price!=null&&q.yrLow!=null&&q.yrHigh!=null&&q.yrHigh>q.yrLow)
+      pos=Math.max(0,Math.min(100,(q.price-q.yrLow)/(q.yrHigh-q.yrLow)*100));
+    const d=document.createElement('div');
+    d.className='wcard'+(s===selected?' sel':'');
+    d.innerHTML=`
+      <div class="row" style="justify-content:space-between">
+        <span class="tick">${s}</span>
+        <button class="sm ghost" data-wdel="${s}" style="padding:1px 6px">✕</button>
+      </div>
+      <div class="tiny" style="height:14px;overflow:hidden">${(q.name||'').slice(0,30)}</div>
+      <div class="px">${usd(q.price)}</div>
+      <span class="pill ${cls(q.chgPct)}">${pct(q.chgPct)}</span>
+      ${pos!=null?`<div class="bar"><i style="left:calc(${pos}% - 1px)"></i></div>
+      <div class="row tiny" style="justify-content:space-between">
+        <span>52w ${usd(q.yrLow,1)}</span><span>${usd(q.yrHigh,1)}</span></div>`:'<div style="height:22px"></div>'}
+      <div style="margin-top:8px;border-top:1px solid var(--line);padding-top:7px">
+        <div class="fund"><span>Market cap</span><b>${big(q.mcap)}</b></div>
+        <div class="fund"><span>P/E</span><b>${q.pe!=null?q.pe.toFixed(1):'—'}</b></div>
+        <div class="fund"><span>EPS</span><b>${q.eps!=null?usd(q.eps):'—'}</b></div>
+        <div class="fund"><span>Volume</span><b>${q.vol!=null?(q.vol/1e6).toFixed(1)+'M':'—'}</b></div>
+      </div>`;
+    d.addEventListener('click',ev=>{if(ev.target.dataset.wdel)return;loadChart(s)});
+    g.appendChild(d);
+  }
+  if(S.provider==='twelvedata'&&S.watchlist.length)
+    g.insertAdjacentHTML('afterend','');
+}
+
+function drawLine(sym){
+  const all=series[sym]||[]; if(!all.length)return;
+  const data=all.slice(-range);
+  const c=$('#lineChart'); if(line)line.destroy();
+  const first=data[0].c, last=data[data.length-1].c, up=last>=first;
+  line=new Chart(c,{type:'line',
+    data:{labels:data.map(p=>p.d),datasets:[{data:data.map(p=>p.c),
+      borderColor:up?'#22c55e':'#ef4444',borderWidth:2,pointRadius:0,tension:.12,fill:true,
+      backgroundColor:up?'rgba(34,197,94,.09)':'rgba(239,68,68,.09)'}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>' '+usd(x.parsed.y)}}},
+      scales:{x:{ticks:{color:'#8b93a3',maxTicksLimit:8,font:{size:10.5}},grid:{color:'#1f2632'}},
+        y:{ticks:{color:'#8b93a3',font:{size:10.5},callback:v=>'$'+v},grid:{color:'#1f2632'}}}}});
+  const chg=(last-first)/first*100;
+  const hi=Math.max(...data.map(p=>p.c)), lo=Math.min(...data.map(p=>p.c));
+  $('#chartStats').innerHTML=
+    `<span>ช่วงนี้ <b class="${cls(chg)}">${pct(chg)}</b></span>
+     <span>สูงสุด <b>${usd(hi)}</b></span>
+     <span>ต่ำสุด <b>${usd(lo)}</b></span>
+     <span>จากจุดสูงสุด <b class="${cls(-1)}">${pct((last-hi)/hi*100)}</b></span>
+     <span class="mut">${data.length} วันทำการ</span>`;
+}
+
+/* ============ RENDER: NOTES ============ */
+function renderNotes(){
+  const syms=[...new Set([...S.holdings.map(h=>h.sym),...S.watchlist,...Object.keys(S.notes)])].sort();
+  const sel=$('#nt-sym'), cur=sel.value;
+  sel.innerHTML=syms.map(s=>`<option ${s===cur?'selected':''}>${s}</option>`).join('');
+  const L=$('#noteList');
+  const ks=Object.keys(S.notes).sort();
+  L.innerHTML=ks.length?'':'<div class="tiny">ยังไม่มีบันทึก</div>';
+  for(const s of ks){
+    const n=S.notes[s];
+    const d=document.createElement('div'); d.className='notecard';
+    d.innerHTML=`<div class="h"><span class="tick">${s}
+      <span class="nm">แก้ไขล่าสุด ${new Date(n.t).toLocaleString('th-TH')}</span></span>
+      <span><button class="sm ghost" data-nedit="${s}">แก้ไข</button>
+      <button class="sm ghost" data-ndel="${s}" style="color:var(--down)">ลบ</button></span></div>
+      <pre>${n.body.replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}</pre>`;
+    L.appendChild(d);
+  }
+}
+
+/* ============ RENDER: DAILY BRIEF ============ */
+const esc=s=>String(s).replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+function renderDaily(){
+  const R=DAILY.regime;
+  const style={
+    buy    :{ic:'🟢',bg:'rgba(34,197,94,.11)', bd:'rgba(34,197,94,.4)',  lab:'น่าทยอยเข้า'},
+    hold   :{ic:'🟡',bg:'rgba(245,158,11,.11)',bd:'rgba(245,158,11,.4)', lab:'ถือรอ / เข้าน้อย'},
+    caution:{ic:'🔴',bg:'rgba(239,68,68,.11)', bd:'rgba(239,68,68,.4)',  lab:'ตลาดร้อน — ระวัง'}
+  }[R.level]||{ic:'⚪',bg:'var(--panel)',bd:'var(--line)',lab:'—'};
+
+  $('#regimeBox').innerHTML=`
+    <div style="background:${style.bg};border:1px solid ${style.bd};border-radius:12px;padding:18px;margin-bottom:16px">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;letter-spacing:1px;color:var(--muted)">สัญญาณภาพรวมวันนี้</span>
+        <span class="tiny">${new Date(DAILY.stamp).toLocaleString('th-TH')}</span>
+      </div>
+      <div style="font-size:23px;font-weight:800;margin-bottom:4px">${style.ic} ${style.lab}</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:9px">${esc(R.title)}</div>
+      <div style="line-height:1.8;color:#cdd3de">${esc(R.summary)}</div>
+      <div style="margin-top:13px;padding-top:13px;border-top:1px solid ${style.bd}">
+        <b>ควรทำอะไร:</b> <span style="line-height:1.8">${esc(R.action)}</span></div>
+    </div>`;
+
+  $('#idxCards').innerHTML=DAILY.indices.map(i=>`
+    <div class="card"><div class="lab">${esc(i.k)}</div><div class="val">${esc(i.v)}</div>
+    <div class="sub2 ${cls(i.c)}">${i.c==null?'—':pct(i.c)}</div></div>`).join('');
+
+  $('#regimeWhy').innerHTML='<b>เพราะอะไร:</b><ul style="margin:8px 0 0;padding-left:20px">'
+    +R.why.map(w=>`<li style="margin-bottom:6px">${esc(w)}</li>`).join('')+'</ul>';
+
+  const wait = R.level!=='buy' ? ' (ยังไม่ใช่จังหวะเข้า — ใช้ศึกษาไว้ก่อน)' : '';
+  $('#coreHead').textContent='🛡️ โซน A — แกนหลัก'+wait;
+  $('#spicyHead').textContent='🔥 โซน B — หุ้นซิ่ง'+wait;
+
+  const stars=n=>'●'.repeat(n)+'<span class="mut">'+'○'.repeat(5-n)+'</span>';
+  const card=(p,i,pre)=>{
+    const up=(p.target-p.px)/p.px*100;
+    return `<div class="notecard" style="padding:14px">
+      <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px">
+        <div class="row" style="gap:11px">
+          <span style="font-size:20px;font-weight:800;color:var(--muted);min-width:22px">${i+1}</span>
+          <div>
+            <span class="tick" style="font-size:16px">${p.sym}</span>
+            <span class="tiny" style="margin-left:7px">${esc(p.name)}</span>
+            <span class="pill" style="background:var(--panel);margin-left:7px">${esc(p.tag)}</span>
+            <div class="tiny" style="margin-top:4px">ความหนักแน่นของหลักฐาน ${stars(p.conviction)}</div>
+          </div>
+        </div>
+        <div style="text-align:right;white-space:nowrap">
+          <div class="${cls(up)}" style="font-size:20px;font-weight:800">${pct(up,1)}</div>
+          <div class="tiny">${usd(p.px)} → เป้า ${usd(p.target)}</div>
+        </div>
+      </div>
+      <button class="sm ghost" data-pick="${pre}${i}" style="margin-top:11px">▸ ดูเหตุผล</button>
+      <div id="pk${pre}${i}" class="hide" style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line);line-height:1.85">
+        <div style="margin-bottom:9px"><b>ทำไมน่าสนใจ:</b> ${esc(p.why)}</div>
+        <div style="margin-bottom:9px"><b>📅 Catalyst:</b> ${esc(p.catalyst)}</div>
+        <div style="background:rgba(239,68,68,.09);border-left:3px solid var(--down);padding:9px 12px;border-radius:5px">
+          <b class="down">⚠️ ความเสี่ยง:</b> ${esc(p.risk)}</div>
+      </div></div>`;
+  };
+  $('#coreList').innerHTML =DAILY.core .map((p,i)=>card(p,i,'c')).join('');
+  $('#spicyList').innerHTML=DAILY.spicy.map((p,i)=>card(p,i,'s')).join('');
+
+  $('#srcList').innerHTML=DAILY.sources.map(s=>
+    `· <a href="${s[1]}" target="_blank">${esc(s[0])}</a>`).join('<br>');
+}
+function pickToggle(e){
+  const i=e.target.dataset.pick; if(i==null)return;
+  const open=$('#pk'+i).classList.toggle('hide');
+  e.target.textContent=open?'▸ ดูเหตุผล':'▾ ซ่อน';
+}
+$('#coreList').addEventListener('click',pickToggle);
+$('#spicyList').addEventListener('click',pickToggle);
+
+function renderAll(){
+  renderDaily(); renderPf(); renderWatch(); renderNotes();
+  $('#stamp').innerHTML=!S.stamp?'ยังไม่ได้ดึงข้อมูล'
+    :(S.snap?'📌 <b>ราคาจากรอบอัปเดตของ Claude</b> ณ '+new Date(S.stamp).toLocaleString('th-TH')
+        +' — กด "ดึงราคา" ถ้าอยากได้ราคาสดเดี๋ยวนี้'
+      :'🟢 ราคาสด · อัปเดตล่าสุด '+new Date(S.stamp).toLocaleString('th-TH'));
+}
+
+/* ============ EVENTS ============ */
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{
+  $$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  ['db','pf','wl','nt','st'].forEach(k=>$('#tab-'+k).classList.toggle('hide',k!==t.dataset.tab));
+}));
+
+$('#provider').value=S.provider; $('#apikey').value=S.apikey;
+$('#provider').addEventListener('change',e=>{S.provider=e.target.value;series={};save()});
+const cleanKey=v=>v.replace(/[\s"'`]/g,'');
+function storeKey(){S.apikey=cleanKey($('#apikey').value);$('#apikey').value=S.apikey;save()}
+$('#apikey').addEventListener('input',storeKey);   /* บันทึกอัตโนมัติ ไม่ต้องกลัวลืมกดปุ่ม */
+$('#apikey').addEventListener('paste',()=>setTimeout(storeKey,0));
+$('#saveKey').addEventListener('click',()=>{storeKey();
+  banner('บันทึก key แล้ว ('+S.apikey.length+' ตัวอักษร)','info');setTimeout(()=>banner(''),2500)});
+$('#testKey').addEventListener('click',()=>{storeKey();testKey()});
+$('#refresh').addEventListener('click',refreshAll);
+
+$('#addHold').addEventListener('click',()=>{
+  const s=$('#ph-sym').value.trim().toUpperCase(), q=num($('#ph-qty').value), a=num($('#ph-avg').value);
+  if(!s||q==null||a==null){banner('กรอก ticker, จำนวนหุ้น และต้นทุนเฉลี่ยให้ครบ','warn');return}
+  const ex=S.holdings.find(h=>h.sym===s);
+  if(ex){ const tq=ex.qty+q; ex.avg=(ex.avg*ex.qty+a*q)/tq; ex.qty=tq; }
+  else S.holdings.push({sym:s,qty:q,avg:a});
+  if(!S.watchlist.includes(s))S.watchlist.push(s);
+  $('#ph-sym').value='';$('#ph-qty').value='';$('#ph-avg').value='';
+  save(); renderAll(); refreshAll();
+});
+
+$('#pfBody').addEventListener('click',e=>{
+  const s=e.target.dataset.del; if(!s)return;
+  if(confirm('ลบ '+s+' ออกจากพอร์ต?')){S.holdings=S.holdings.filter(h=>h.sym!==s);save();renderAll()}
+});
+$('#pfBody').addEventListener('change',e=>{
+  const f=e.target.dataset.e; if(!f)return;
+  const h=S.holdings.find(x=>x.sym===e.target.dataset.s), v=num(e.target.value);
+  if(h&&v!=null){h[f]=v;save();renderPf()}
+});
+
+$('#addWatch').addEventListener('click',()=>{
+  const s=$('#wl-sym').value.trim().toUpperCase(); if(!s)return;
+  if(!S.watchlist.includes(s))S.watchlist.push(s);
+  $('#wl-sym').value=''; save(); renderAll(); refreshAll();
+});
+$('#wlGrid').addEventListener('click',e=>{
+  const s=e.target.dataset.wdel; if(!s)return;
+  S.watchlist=S.watchlist.filter(x=>x!==s); save(); renderWatch();
+});
+$('#ranges').addEventListener('click',e=>{
+  const r=e.target.dataset.r; if(!r)return; range=+r;
+  $$('#ranges button').forEach(b=>b.classList.remove('primary')); e.target.classList.add('primary');
+  if(selected)drawLine(selected);
+});
+
+$('#saveNote').addEventListener('click',()=>{
+  const s=($('#nt-sym-new').value.trim()||$('#nt-sym').value).toUpperCase();
+  const body=$('#nt-body').value.trim();
+  if(!s||!body){$('#noteMsg').textContent='เลือกหุ้นและเขียนเนื้อหาก่อน';return}
+  S.notes[s]={body,t:Date.now()}; save(); renderNotes();
+  $('#nt-sym-new').value=''; $('#noteMsg').textContent='บันทึก '+s+' แล้ว ✓';
+  setTimeout(()=>$('#noteMsg').textContent='',2500);
+});
+$('#noteList').addEventListener('click',e=>{
+  const ed=e.target.dataset.nedit, dl=e.target.dataset.ndel;
+  if(ed){$('#nt-sym').value=ed;$('#nt-body').value=S.notes[ed].body;window.scrollTo({top:0,behavior:'smooth'})}
+  if(dl&&confirm('ลบบันทึกของ '+dl+'?')){delete S.notes[dl];save();renderNotes()}
+});
+
+$('#expBtn').addEventListener('click',()=>{
+  const {apikey,...rest}=S;
+  const b=new Blob([JSON.stringify(rest,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='stock-dashboard-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+});
+$('#impBtn').addEventListener('click',()=>$('#impFile').click());
+$('#impFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const j=JSON.parse(r.result);
+    S=Object.assign({},S,j,{apikey:S.apikey}); save(); series={}; renderAll();
+    banner('นำเข้าข้อมูลสำเร็จ','info')}catch(err){banner('ไฟล์ไม่ถูกต้อง','err')}};
+  r.readAsText(f);
+});
+$('#seedBtn').addEventListener('click',()=>{
+  if(confirm('เขียนทับพอร์ตปัจจุบันด้วยข้อมูลจาก Dime! (11 ส.ค. 69)?')){
+    S.holdings=SEED.map(h=>({...h})); save(); renderAll(); banner('รีเซ็ตพอร์ตแล้ว','info')}
+});
+$('#seedNoteBtn').addEventListener('click',()=>{
+  if(confirm('เขียนทับบันทึกวิเคราะห์ด้วยฉบับตั้งต้น (ข้อมูล 11 ส.ค. 69)?')){
+    for(const k in NOTESEED)S.notes[k]={body:NOTESEED[k],t:T};
+    save(); renderNotes(); banner('กู้บันทึกตั้งต้นแล้ว','info')}
+});
+$('#clearBtn').addEventListener('click',()=>{
+  if(confirm('ลบข้อมูลพอร์ต watchlist และบันทึกทั้งหมด?')){
+    localStorage.removeItem(KEY); S={...DEF}; series={}; renderAll(); banner('ล้างข้อมูลแล้ว','info')}
+});
+
+/* ============ อัปเดตอัตโนมัติ ============ */
+/* เช็กเวลาตลาดสหรัฐจริงตามโซนเวลา New York (รองรับ DST เองอัตโนมัติ) */
+function etNow(){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour12:false,
+    weekday:'short',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date());
+  const g=t=>p.find(x=>x.type===t).value;
+  return {wd:g('weekday'),min:+g('hour')*60+ +g('minute')};
+}
+function marketOpen(){
+  const e=etNow();
+  if(['Sat','Sun'].includes(e.wd)) return false;
+  return e.min>=570 && e.min<960;           /* 09:30–16:00 ET */
+}
+function mktLabel(){
+  const e=etNow();
+  if(['Sat','Sun'].includes(e.wd)) return '🔴 ตลาดสหรัฐปิด (สุดสัปดาห์)';
+  if(marketOpen()){
+    const left=960-e.min;
+    return `🟢 ตลาดสหรัฐเปิดอยู่ · เหลืออีก ${Math.floor(left/60)} ชม. ${left%60} นาที`;
+  }
+  return e.min<570 ? '🔴 ตลาดสหรัฐยังไม่เปิด (เปิด 20:30 น. เวลาไทย)'
+                   : '🔴 ตลาดสหรัฐปิดแล้ว (ปิด 03:00 น. เวลาไทย)';
+}
+function tick(){ $('#mktStatus').textContent=mktLabel(); }
+setInterval(tick,30000);
+
+/* ============ INIT ============ */
+renderAll(); tick();
+if(S.apikey.trim()) refreshAll();
+else banner('หน้านี้ใช้งานได้เลยด้วยราคาภาพนิ่งวันที่ 11 ส.ค. 2026 — พอร์ต บันทึกวิเคราะห์ และตัวเลขกำไร/ขาดทุนครบทุกอย่าง<br>'
+  +'ถ้าอยากให้ราคาอัปเดตเองและมีกราฟย้อนหลัง: วาง API key ในช่องมุมขวาบน แล้วกด "ทดสอบ key" → "ดึงราคา"','info');
+</script>
+</body>
+</html>
