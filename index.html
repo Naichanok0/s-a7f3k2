@@ -120,6 +120,10 @@ input.cell{width:88px;text-align:right;padding:4px 7px}
     <div class="sub">พอร์ต · Watchlist · ตัวเลขพื้นฐาน · บันทึกวิเคราะห์</div>
   </div>
   <div class="row">
+    <div class="row" style="gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden">
+      <button class="sm" id="ccyUSD" style="border:none;border-radius:0;padding:7px 13px">USD $</button>
+      <button class="sm" id="ccyTHB" style="border:none;border-radius:0;padding:7px 13px">บาท ฿</button>
+    </div>
     <select id="provider" title="ผู้ให้บริการข้อมูลราคา">
       <option value="twelvedata">Twelve Data</option>
       <option value="fmp">Financial Modeling Prep</option>
@@ -142,9 +146,63 @@ input.cell{width:88px;text-align:right;padding:4px 7px}
   <div class="tab active" data-tab="db">📌 แนวโน้มวันนี้</div>
   <div class="tab" data-tab="pf">พอร์ต</div>
   <div class="tab" data-tab="wl">Watchlist &amp; กราฟ</div>
+  <div class="tab" data-tab="ai">💬 ถาม AI</div>
   <div class="tab" data-tab="nt">บันทึกวิเคราะห์</div>
   <div class="tab" data-tab="st">ตั้งค่า / สำรองข้อมูล</div>
 </div>
+
+<!-- ==================== AI CHAT ==================== -->
+<section id="tab-ai" class="hide">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">💬 ถาม AI เกี่ยวกับพอร์ตของคุณ</h2>
+      <div class="row">
+        <select id="aiProv" style="font-size:12px">
+          <option value="gemini">Gemini · ฟรี ไม่ต้องใช้บัตร</option>
+          <option value="groq">Groq · ฟรี เร็วมาก</option>
+          <option value="claude">Claude · เสียเงิน</option>
+        </select>
+        <select id="aiModel" style="font-size:12px"></select>
+        <button class="sm ghost" id="aiClear">ล้างบทสนทนา</button>
+      </div>
+    </div>
+
+    <div id="aiSetup" class="msg info" style="font-size:12.5px;line-height:1.85">
+      <div id="aiHelp"></div>
+      <div class="row" style="margin-top:11px">
+        <input id="aiKey" type="password" placeholder="วาง API key ที่นี่" style="flex:1 1 240px;min-width:0">
+        <button class="primary sm" id="aiKeySave">บันทึก key</button>
+        <button class="sm" id="aiKeyTest">ทดสอบ</button>
+        <button class="sm" id="aiKeyModels" title="ดึงรายชื่อรุ่นที่ใช้ได้จริงจากผู้ให้บริการ">↻ โหลดรายชื่อรุ่น</button>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+        ⚠️ key เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ได้ฝังในไฟล์ จึงไม่หลุดไปกับเว็บสาธารณะ
+        แต่<b>อย่าเปิดหน้านี้บนคอมสาธารณะ</b> และถ้าเผลอแชร์ key ให้ไป revoke ทันที
+        · เก็บ key แยกกันแต่ละเจ้า สลับไปมาได้
+      </div>
+    </div>
+
+    <div id="aiBox" style="border:1px solid var(--line);border-radius:10px;background:var(--panel2);
+      padding:14px;height:420px;overflow-y:auto;line-height:1.85"></div>
+
+    <div class="row" style="margin-top:11px;align-items:flex-end">
+      <textarea id="aiIn" placeholder="พิมพ์คำถาม เช่น &quot;ทำไมถึงบอกให้แบ่งขาย MU&quot; แล้วกด Enter"
+        style="flex:1 1 auto;min-height:64px;min-width:0"></textarea>
+      <button class="primary" id="aiSend" style="height:44px">ส่ง</button>
+    </div>
+    <div class="tiny" style="margin-top:8px">
+      Enter = ส่ง · Shift+Enter = ขึ้นบรรทัดใหม่ · AI เห็นพอร์ต เงินสด บันทึก และบทวิเคราะห์วันนี้ของคุณทั้งหมด
+    </div>
+
+    <div class="row" style="margin-top:12px;gap:7px;flex-wrap:wrap" id="aiSuggest">
+      <button class="sm ghost">ทำไมถึงบอกให้แบ่งขาย MU</button>
+      <button class="sm ghost">ผมอยากรอให้หุ้นกลับมาเป็นบวกก่อนค่อยขาย คิดยังไง</button>
+      <button class="sm ghost">พอร์ตผมกระจุกเกินไปไหม</button>
+      <button class="sm ghost">มีเงิน $50 ควรซื้อตัวไหนก่อน</button>
+      <button class="sm ghost">อธิบายว่าหุ้นวัฏจักรคืออะไร</button>
+    </div>
+  </div>
+</section>
 
 <!-- ==================== DAILY BRIEF ==================== -->
 <section id="tab-db">
@@ -154,6 +212,15 @@ input.cell{width:88px;text-align:right;padding:4px 7px}
     <div class="cards" id="idxCards"></div>
     <div style="margin-top:14px;line-height:1.85" id="regimeWhy"></div>
   </div>
+  <div class="panel" style="border-left:3px solid var(--warn)">
+    <h2>🎯 หุ้นที่ถืออยู่ — ควรทำอะไรต่อ</h2>
+    <div class="tiny" style="margin:-6px 0 13px;line-height:1.7">
+      ข้อสังเกตจากภาวะตลาด ข่าว และโครงสร้างพอร์ตของคุณ — เป็นสิ่งที่ควรพิจารณา ไม่ใช่คำสั่งให้ทำตาม
+      การตัดสินใจซื้อขายเป็นของคุณคนเดียว
+    </div>
+    <div id="actList"></div>
+  </div>
+
   <div class="msg warn" style="font-size:12.5px">
     <b>ตัวเลข % ที่เห็นคือ "เป้าหมายราคาเฉลี่ยของนักวิเคราะห์" ไม่ใช่คำทำนายของ Claude</b><br>
     มันคือความเห็นของคนกลุ่มหนึ่งที่มักจะมองโลกในแง่ดีเกินจริงและผิดบ่อยมาก
@@ -178,6 +245,20 @@ input.cell{width:88px;text-align:right;padding:4px 7px}
     </div>
     <div id="spicyList"></div>
   </div>
+  <div class="panel" style="border-left:3px solid #a855f7">
+    <h2>🔭 เรดาร์ระยะตั้งต้น</h2>
+    <div class="tiny" style="margin:-6px 0 13px;line-height:1.8">
+      ส่วนนี้ไม่ได้หา "หุ้นที่ขึ้นไปแล้ว" แต่ไล่หา<b>เงื่อนไขตั้งต้น</b>แบบที่ SNDK เคยมีตอนอยู่ที่ $41 —
+      ก่อนที่ตลาดจะรู้ตัว<br>
+      เงื่อนไขที่มองหา: <b>ฐานกำไร/รายได้ต่ำที่กำลังจะพลิก</b> ·
+      <b>วัฏจักรสินค้าเพิ่งเริ่มรอบขึ้น ไม่ใช่ปลายรอบ</b> ·
+      <b>เพิ่งแยกบริษัท/IPO ที่ยังไม่มีนักวิเคราะห์ตาม</b> · <b>ธีมใหม่ระยะเริ่มต้น</b><br>
+      <b class="down">อ่านช่อง "อะไรพิสูจน์ว่าคิดผิด" ให้ครบทุกตัวก่อนตัดสินใจ —
+      ของแบบนี้ส่วนใหญ่ล้มเหลว ที่สำเร็จหนึ่งตัวต้องแลกกับที่พังหลายตัว</b>
+    </div>
+    <div id="radarList"></div>
+  </div>
+
   <div class="panel">
     <h2>แหล่งอ้างอิง</h2>
     <div id="srcList" class="tiny" style="line-height:2"></div>
@@ -195,6 +276,28 @@ input.cell{width:88px;text-align:right;padding:4px 7px}
       <div class="sub2" id="k-pl2">—</div></div>
     <div class="card"><div class="lab">เปลี่ยนแปลงวันนี้</div><div class="val" id="k-day">—</div>
       <div class="sub2" id="k-day2">—</div></div>
+  </div>
+
+  <div class="panel" style="border-left:3px solid var(--up)">
+    <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:14px">
+      <div>
+        <h2 style="margin:0 0 4px">💵 เงินสดรอซื้อ</h2>
+        <div class="tiny">เงินที่พร้อมลงทุนแต่ยังไม่ได้ซื้อ — กรอกเป็นดอลลาร์เสมอ</div>
+      </div>
+      <div class="row">
+        <span class="tiny">$</span>
+        <input id="cashIn" type="number" step="any" placeholder="0.00" style="width:130px;text-align:right">
+        <button class="sm" id="cashSave">บันทึก</button>
+      </div>
+    </div>
+    <div class="cards" style="margin-top:14px">
+      <div class="card"><div class="lab">เงินสด</div><div class="val" id="k-cash">—</div>
+        <div class="sub2" id="k-cash2">—</div></div>
+      <div class="card"><div class="lab">รวมทั้งหมด (หุ้น + เงินสด)</div><div class="val" id="k-total">—</div>
+        <div class="sub2" id="k-total2">—</div></div>
+      <div class="card"><div class="lab">สัดส่วนเงินสด</div><div class="val" id="k-cashw">—</div>
+        <div class="sub2">ยิ่งสูง = ยิ่งมีกระสุนรอจังหวะ</div></div>
+    </div>
   </div>
 
   <div class="grid2">
@@ -242,16 +345,27 @@ input.cell{width:88px;text-align:right;padding:4px 7px}
   <div class="panel">
     <div class="row" style="justify-content:space-between;margin-bottom:12px">
       <h2 style="margin:0" id="chartTitle">กราฟราคา</h2>
+      <div class="row">
+        <button class="sm" id="prefetch" title="ดึงกราฟทุกตัวมาเก็บไว้ในเครื่องทีเดียว">⤓ เตรียมกราฟทุกตัว</button>
+        <button class="sm ghost" id="hclear" title="ลบข้อมูลกราฟที่เก็บไว้ แล้วดึงใหม่">ล้างแคช</button>
+      </div>
       <div class="row" id="ranges">
-        <button class="sm" data-r="30">1M</button>
-        <button class="sm" data-r="90">3M</button>
-        <button class="sm" data-r="180">6M</button>
-        <button class="sm primary" data-r="365">1Y</button>
-        <button class="sm" data-r="1095">3Y</button>
+        <button class="sm" data-r="1D">1D</button>
+        <button class="sm" data-r="1W">1W</button>
+        <button class="sm" data-r="1M">1M</button>
+        <button class="sm primary" data-r="1Y">1Y</button>
+        <button class="sm" data-r="5Y">5Y</button>
+        <button class="sm" data-r="MAX">MAX</button>
       </div>
     </div>
     <div class="chartbox"><canvas id="lineChart"></canvas></div>
     <div id="chartStats" class="row tiny" style="margin-top:12px;gap:20px"></div>
+    <div class="tiny" style="margin-top:9px;line-height:1.75">
+      <b>ข้อมูลกราฟเก็บไว้ในเครื่องแล้ว</b> — ดึงหุ้นละครั้งเดียวต่อวัน หลังจากนั้นกดสลับ 1D/1W/1M/1Y/5Y/MAX
+      ได้ไม่จำกัด ไม่กินโควต้าเลย<br>
+      กด <b>⤓ เตรียมกราฟทุกตัว</b> ครั้งเดียวตอนเช้า แล้วทั้งวันจะไม่เจอข้อความรออีก
+      (โควต้า Twelve Data แพลนฟรีคือ 8 คำขอ/นาที ซึ่งเป็นข้อจำกัดของผู้ให้บริการ ไม่ใช่ของหน้าเว็บนี้)
+    </div>
   </div>
 </section>
 
@@ -330,6 +444,9 @@ input.cell{width:88px;text-align:right;padding:4px 7px}
 const DAILY={
 stamp:'2026-08-13T08:53:00+07:00',
 
+/* อัตราแลกเปลี่ยน 1 USD = ? THB */
+fx:32.94,
+
 /* level: 'buy' = น่าทยอยเข้า | 'hold' = ถือรอ เข้าน้อย | 'caution' = ตลาดร้อน ระวัง */
 regime:{
   level:'caution',
@@ -356,6 +473,26 @@ indices:[
   {k:'Nasdaq',  v:'26,588', c:+0.54},
   {k:'VIX',     v:'~15.3',  c:null},
   {k:'US 10Y',  v:'4.64%',  c:null}
+],
+
+/* สิ่งที่ควรพิจารณากับหุ้นที่ถืออยู่ — kind: 'add'(ซื้อเพิ่ม) | 'trim'(แบ่งขาย) | 'sell'(ขายออก) | 'hold'(ถือต่อ) */
+actions:[
+ {sym:'MU',kind:'trim',title:'พิจารณาแบ่งขายบางส่วน ถ้าราคาเด้งกลับ',
+  why:'ถือ 10.85% ของพอร์ต ซึ่งใหญ่เป็นอันดับ 3 ทั้งที่เป็นธุรกิจวัฏจักรที่คุณซื้อหลังจุดพีคไปแล้ว '
+    +'(ต้นทุน 946.69 · ราคาเคยแตะ ~1,250-1,300 ช่วง มิ.ย.) เมื่อรวมกับ SNDK อีก 3.6% = 14.5% ของพอร์ตอยู่ในวัฏจักรเมมโมรีเดียวกัน '
+    +'นั่นคือเดิมพันเดียวสองที่ ไม่ใช่การกระจายความเสี่ยง',
+  note:'ไม่ได้แปลว่าต้องขายวันนี้ — แต่ถ้าราคากลับมาใกล้ทุน การลดขนาดลงเหลือ ~5-6% จะทำให้พอร์ตทนทานขึ้นมาก '
+    +'สิ่งที่ต้องตอบตัวเองก่อนตัดสินใจ: คุณเชื่อจริงไหมว่ารอบราคาเมมโมรียังไม่ถึงจุดสูงสุด ถ้าตอบไม่ได้ อย่าถัวเพิ่ม'},
+
+ {sym:'TSM',kind:'add',title:'เป็นตัวที่น้ำหนักน้อยเกินไปเมื่อเทียบกับคุณภาพ',
+  why:'ถือแค่ 3.97% ทั้งที่เป็นธุรกิจที่ดีที่สุดในกลุ่มเซมิที่คุณถือ — งบ Q2 กำไรสุทธิ +77.4% เร็วกว่ารายได้ (+36%) เท่าตัว '
+    +'แปลว่ามีอำนาจกำหนดราคาสูงมาก และไม่ว่าใครชนะสงคราม AI ก็ต้องจ้าง TSMC ผลิตอยู่ดี',
+  note:'น้ำหนักในพอร์ตตอนนี้กลับหัวกับคุณภาพ — MU (วัฏจักร) 10.85% แต่ TSM (คุณภาพสูง) แค่ 3.97% '
+    +'ถ้าจะเพิ่มน้ำหนัก ควรทยอยเข้าเป็นไม้ ไม่ใช่เข้าทีเดียว เพราะตลาดอยู่จุดสูง · ความเสี่ยงที่ต้องรับคือภูมิรัฐศาสตร์ไต้หวัน'},
+
+ {sym:'IVV',kind:'hold',title:'DCA ต่อไปตามปกติ ไม่ต้องจับจังหวะ',
+  why:'ส่วนนี้คือแกนของแผนระยะยาว การพยายามจับจังหวะกับเงินก้อนนี้คือความผิดพลาดที่แพงที่สุดที่นักลงทุนอายุน้อยทำกัน',
+  note:'ข้อควรรู้: IVV ไม่ได้กระจายเสี่ยงเท่าที่ชื่อบอก หุ้น 10 ตัวใหญ่สุดกินดัชนี ~41% เวลาคุณซื้อ IVV คุณซื้อ AI เพิ่มไปด้วยโดยไม่รู้ตัว'}
 ],
 
 /* target = เป้าหมายราคาเฉลี่ยของนักวิเคราะห์ (ไม่ใช่คำทำนายของ Claude)
@@ -453,6 +590,36 @@ px:{
   SNDK:[1344.29, 5.76,'SanDisk'],
   AMZN:[267.28, -1.83,'Amazon.com']
 },
+
+/* 🔭 เรดาร์ระยะตั้งต้น — ไล่หา "เงื่อนไข" แบบที่ SNDK เคยมีตอนอยู่ที่ $41
+   ไม่ใช่การทำนาย แต่เป็นการหาสถานการณ์ที่ทำให้หุ้นวิ่งแรงได้ ก่อนที่ตลาดจะรู้ตัว
+   setup: กลไก · trigger: อะไรต้องเกิด · kill: อะไรพิสูจน์ว่าคิดผิด · coverage: นักวิเคราะห์ตามกี่ราย */
+radar:[
+ {sym:'QNT',name:'Quantinuum',px:71.74,coverage:'13 ราย (น้อย)',
+  setup:'IPO ใหม่ มิ.ย. 2026 + ฐานรายได้ต่ำมาก — รายได้ Q2 แค่ 8 ล้าน แต่โต 279% YoY '
+    +'บริษัทที่รายได้ฐาน 8 ล้าน ถ้าโตเป็น 200 ล้านใน 3 ปี คือโต 25 เท่า ซึ่งเป็นเลขที่เป็นไปได้ทางคณิตศาสตร์ '
+    +'ต่างจากบริษัทที่รายได้ 40,000 ล้านอยู่แล้ว',
+  trigger:'ทำรายได้ทั้งปีได้ตามเป้า 28-32 ล้าน · ดีล Oracle ติดตั้ง Helios จริงและขยายผลต่อ · '
+    +'มีลูกค้าองค์กรรายที่สองที่ไม่ใช่รัฐบาล',
+  kill:'มูลค่าบริษัท 18.86 พันล้าน แต่รายได้ 12 เดือน 22.97 ล้าน = 820 เท่าของยอดขาย · ขาดทุน 170 ล้าน/ปี '
+    +'ถ้ารายได้ไม่ไปถึงหลักร้อยล้านใน 2-3 ปี ราคานี้ไม่มีทางถูกต้อง · ควอนตัมอาจใช้งานจริงช้ากว่าที่คิด 5-10 ปี'},
+
+ {sym:'BE',name:'Bloom Energy',px:237.16,coverage:'29 ราย (ปานกลาง)',
+  setup:'กำไรเพิ่งพลิกจากขาดทุนเป็นกำไรจริง (กำไรสุทธิ 12 เดือน 244.94 ล้าน) พร้อมรายได้ Q2 ทำสถิติ '
+    +'1.065 พันล้าน +166% YoY — จุดที่บริษัทพลิกเป็นกำไรคือจุดที่ operating leverage เริ่มทำงาน '
+    +'ต้นทุนคงที่เท่าเดิมแต่รายได้โต กำไรจะโตเร็วกว่ารายได้หลายเท่า นี่คือกลไกเดียวกับที่ทำให้ SNDK ขึ้น',
+  trigger:'ดีลจ่ายไฟดาต้าเซ็นเตอร์รายใหม่ · Nebius เริ่มใช้เทคโนโลยีจริงแล้วมีรายอื่นตาม · margin ขยายต่อเนื่อง',
+  kill:'beta 3.83 = เหวี่ยงแรงกว่าตลาดเกือบ 4 เท่า · ถ้าการสร้างดาต้าเซ็นเตอร์ชะลอ คำสั่งซื้อหายทันที · '
+    +'ราคาขึ้นมามากแล้ว ส่วนที่ง่ายที่สุดของการวิ่งอาจจบไปแล้ว'},
+
+ {sym:'MU/SNDK',name:'บทเรียนจากพอร์ตตัวเอง',px:null,coverage:'46 ราย / 20+ ราย (เยอะ)',
+  setup:'⚠️ ใส่ไว้เตือนความจำ ไม่ใช่แนะนำให้ซื้อ — ทั้งคู่คือกรณีศึกษาว่า "เงื่อนไขครบแล้ว" หน้าตาเป็นยังไง '
+    +'SNDK ตอน 41 ดอลลาร์ มีครบทุกข้อ: เพิ่งแยกบริษัทไม่มีใครตาม + กำไรฐานต่ำกำลังจะระเบิด + ราคา NAND เริ่มรอบขึ้น '
+    +'ตอนนี้มันขึ้นไป 2,354 แล้วลงมา 1,344 (-43% จากพีค) = เงื่อนไขทั้งสามข้อหมดอายุไปแล้ว',
+  trigger:'ไม่มี — นี่คือช่วงปลายรอบ ไม่ใช่ต้นรอบ นักวิเคราะห์ 46 รายตาม MU แล้ว แปลว่าไม่มีข้อมูลอะไรที่ตลาดยังไม่รู้',
+  kill:'สิ่งที่ต้องจำ: ตอนที่หุ้นมีเงื่อนไขครบ มันจะดู "เสี่ยงเกินไป" และไม่มีใครพูดถึง '
+    +'ตอนที่มันดู "น่าซื้อและทุกคนพูดถึง" คือตอนที่ผลตอบแทนถูกกินไปแล้ว'}
+],
 
 sources:[
  ['ภาวะตลาด 12 ส.ค. 2026 (TheStreet)','https://www.thestreet.com/stock-market-today/stock-market-today-dow-jones-sp-500-nasdaq-updates-aug-12-2026'],
@@ -740,7 +907,7 @@ AMZN:`📌 THESIS
 เป็นโพซิชันเล็กสุด (2.29%) ทั้งที่เป็นหนึ่งในธุรกิจที่มั่นคงที่สุดที่ผมถือ — น้ำหนักไม่สอดคล้องกับความเชื่อ`
 };
 
-const DEF={provider:'twelvedata',apikey:'',holdings:SEED,
+const DEF={provider:'twelvedata',apikey:'',holdings:SEED,cash:0,ccy:'USD',fx:DAILY.fx,aiprov:'gemini',aikeys:{},aimodels:{},aimodelList:{},
   watchlist:['IVV','PLTR','MU','CRWV','MSFT','AVGO','NVDA','RKLB','TSM','SNDK','AMZN'],
   notes:{},quotes:{},stamp:null};
 let S=load();
@@ -750,11 +917,11 @@ if(!S.notes||!Object.keys(S.notes).length){S.notes={};for(const k in NOTESEED)S.
 /* ถ้าไฟล์ถูก scheduled task อัปเดตใหม่กว่าที่เก็บไว้ ให้ใช้ราคาจากไฟล์ทับของเดิม */
 if(!S.quotes||!Object.keys(S.quotes).length||!S.stamp||Date.parse(DAILY.stamp)>Date.parse(S.stamp)){
   S.quotes=Object.assign({},S.quotes,JSON.parse(JSON.stringify(SEEDQ)));
-  S.stamp=DAILY.stamp; S.snap=true; save();
+  S.stamp=DAILY.stamp; S.snap=true; S.fx=DAILY.fx; save();
 }
-let series={};            // ticker -> [{d,c}]
+let hist={};              // ticker -> {daily:[{d,c}], intra:[{d,c}]}
 let selected=S.watchlist[0]||null;
-let range=365, pie=null, line=null;
+let range='1Y', pie=null, line=null;
 
 function load(){try{return Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return {...DEF}}}
 function save(){localStorage.setItem(KEY,JSON.stringify(S))}
@@ -762,7 +929,13 @@ function save(){localStorage.setItem(KEY,JSON.stringify(S))}
 /* ============ HELPERS ============ */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const num=v=>{const n=parseFloat(v);return isFinite(n)?n:null};
-function usd(v,d=2){return v==null?'—':(v<0?'-$':'$')+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+const fx=()=>S.fx||DAILY.fx||32.94;
+/* แสดงเงินตามสกุลที่เลือก — เก็บข้อมูลเป็น USD เสมอ แปลงตอนแสดงผลเท่านั้น */
+function usd(v,d=2){
+  if(v==null)return '—';
+  const thb=S.ccy==='THB', x=thb?v*fx():v, s=thb?'฿':'$';
+  return (x<0?'-'+s:s)+Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
 function pct(v,d=2){return v==null?'—':(v>=0?'+':'')+v.toFixed(d)+'%'}
 function big(v){if(v==null)return '—';const a=Math.abs(v);
   if(a>=1e12)return '$'+(v/1e12).toFixed(2)+'T';
@@ -774,7 +947,7 @@ function banner(html,type='info'){$('#banner').innerHTML=html?`<div class="msg $
 /* ============ DATA PROVIDERS ============ */
 async function jget(url){
   let r,txt;
-  try{ r=await fetch(url); txt=await r.text(); }
+  try{ r=await fetchT(url); txt=await r.text(); }
   catch(e){ throw new Error('ต่อเน็ตไม่ได้/ถูกบล็อก — '+e.message) }
   let j=null; try{ j=JSON.parse(txt) }catch(e){}
   const apiMsg = j&&(j.message||j['Error Message']||j.error);
@@ -811,6 +984,7 @@ async function testKey(){
 
 /* --- ตัวจำกัดอัตราคำขอ: Twelve Data แพลนฟรี = 8 เครดิต/นาที (1 สัญลักษณ์ = 1 เครดิต) --- */
 let spent=[];
+let onWait=null;   /* callback แสดงสถานะรอ (ใช้ตอนโหลดกราฟ) */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function spend(n){
   if(S.provider!=='twelvedata') return;
@@ -818,10 +992,18 @@ async function spend(n){
     const now=Date.now(); spent=spent.filter(t=>now-t<61000);
     if(spent.length+n<=8) break;
     const wait=Math.ceil((61000-(now-spent[0]))/1000);
-    banner(`โควต้าฟรีจำกัด 8 คำขอ/นาที — รออีก ${wait} วินาที แล้วจะดึงต่อให้อัตโนมัติ`,'warn');
-    await sleep(1500);
+    const msg=`⏳ Twelve Data แพลนฟรีจำกัด 8 คำขอ/นาที — รออีก ${wait} วินาที แล้วจะดึงต่อให้อัตโนมัติ`;
+    banner(msg,'warn'); if(onWait)onWait(msg);
+    await sleep(1000);
   }
   const t=Date.now(); for(let i=0;i<n;i++) spent.push(t);
+}
+/* fetch ที่มีเวลาจำกัด — กันค้างแบบไม่มีคำตอบ */
+async function fetchT(url,opt,ms){
+  const c=new AbortController(), id=setTimeout(()=>c.abort(),ms||25000);
+  try{ return await fetch(url,Object.assign({signal:c.signal},opt||{})); }
+  catch(e){ throw new Error(e.name==='AbortError'?'หมดเวลารอคำตอบ (25 วินาที) — เน็ตช้าหรือผู้ให้บริการไม่ตอบ':e.message) }
+  finally{ clearTimeout(id) }
 }
 const chunk=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o};
 
@@ -858,14 +1040,26 @@ async function fetchQuotes(syms){
   return out;
 }
 
-/* --- history: returns [{d:'YYYY-MM-DD',c:number}] oldest->newest --- */
-async function fetchHistory(sym){
+/* ช่วงเวลาของกราฟ — days = จำนวนแท่งรายวัน (วันทำการ) ที่ย้อนกลับไป */
+const RANGES={
+  '1D' :{label:'1 วัน',    days:1,      intra:true},
+  '1W' :{label:'1 สัปดาห์', days:5},
+  '1M' :{label:'1 เดือน',  days:21},
+  '1Y' :{label:'1 ปี',     days:252},
+  '5Y' :{label:'5 ปี',     days:1260},
+  'MAX':{label:'ทั้งหมด',  days:1e9}
+};
+const RKEYS=['1D','1W','1M','1Y','5Y','MAX'];
+
+/* ดึงอนุกรมราคาดิบจากผู้ให้บริการ → [{d,c}] เก่า→ใหม่ */
+async function fetchSeries(sym,iv,n){
   const k=S.apikey.trim();
   if(S.provider==='twelvedata'){
     await spend(1);
-    const j=await jget(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=800&apikey=${k}`);
+    const j=await jget(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=${iv}&outputsize=${n}&apikey=${k}`);
     return (j.values||[]).map(v=>({d:v.datetime,c:parseFloat(v.close)})).reverse();
   }
+  if(iv!=='1day') throw new Error('ข้อมูลระหว่างวันต้องใช้ Twelve Data — Financial Modeling Prep แพลนฟรีไม่มีให้ (สลับผู้ให้บริการที่มุมขวาบน)');
   let j;
   try{
     j=await jget(`https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${sym}&apikey=${k}`);
@@ -875,6 +1069,88 @@ async function fetchHistory(sym){
     j=await jget(`https://financialmodelingprep.com/api/v3/historical-price-full/${sym}?serietype=line&apikey=${k}`);
     return (j.historical||[]).map(v=>({d:v.date,c:parseFloat(v.close)})).reverse();
   }
+}
+
+/* โหลดครั้งเดียวได้ทุกช่วง: รายวันชุดยาว 1 ชุด + ระหว่างวัน 1 ชุด */
+/* ---- คลังเก็บกราฟในเครื่อง: ดึงครั้งเดียวแล้วใช้ซ้ำได้ไม่จำกัด ---- */
+const HKEY='stockdash_hist_v1';
+const DAY_MS=20*3600*1000, INTRA_MS=15*60*1000;   /* รายวันเก็บ 20 ชม. · ระหว่างวันเก็บ 15 นาที */
+function hLoad(){ try{return JSON.parse(localStorage.getItem(HKEY)||'{}')}catch(e){return {}} }
+function hSave(db){
+  for(let i=0;i<4;i++){
+    try{ localStorage.setItem(HKEY,JSON.stringify(db)); return true }
+    catch(e){ /* เต็ม → ทิ้งตัวที่เก่าสุดแล้วลองใหม่ */
+      const ks=Object.keys(db); if(!ks.length)return false;
+      ks.sort((a,b)=>(db[a].dT||0)-(db[b].dT||0)); delete db[ks[0]];
+    }
+  }
+  return false;
+}
+/* บีบให้เล็ก: เก็บเป็น [วันที่, ราคา] แทน object */
+const packS  =a=>a.map(p=>[p.d,+p.c.toFixed(4)]);
+const unpackS=a=>a.map(p=>({d:p[0],c:p[1]}));
+
+async function ensureHist(sym,needIntra,say){
+  hist[sym]=hist[sym]||{};
+  const db=hLoad(), e=db[sym]||{}, now=Date.now();
+
+  if(!hist[sym].daily){
+    if(e.d&&now-e.dT<DAY_MS){                       /* มีในเครื่องและยังไม่หมดอายุ → ไม่ต้องเรียก API */
+      hist[sym].daily=unpackS(e.d);
+      if(say)say('ใช้ข้อมูลที่เก็บไว้ในเครื่อง (ดึงเมื่อ '+new Date(e.dT).toLocaleString('th-TH')+')');
+    }else{
+      if(say)say('กำลังดึงราคาย้อนหลังรายวันของ '+sym+' … (ครั้งเดียวต่อวัน หลังจากนี้ไม่ต้องดึงอีก)');
+      const a=await fetchSeries(sym,'1day',2000);
+      hist[sym].daily=a;
+      db[sym]=Object.assign({},e,{d:packS(a),dT:now}); hSave(db);
+    }
+  }
+  if(needIntra&&!hist[sym].intra){
+    const e2=hLoad()[sym]||{};
+    if(e2.i&&now-e2.iT<INTRA_MS){ hist[sym].intra=unpackS(e2.i); }
+    else{
+      if(say)say('กำลังดึงราคาระหว่างวันของ '+sym+' …');
+      const a=await fetchSeries(sym,'5min',110);
+      hist[sym].intra=a;
+      const db2=hLoad(); db2[sym]=Object.assign({},db2[sym]||{},{i:packS(a),iT:now}); hSave(db2);
+    }
+  }
+}
+/* โหลดกราฟทุกตัวในพอร์ตล่วงหน้าทีเดียว แล้วหลังจากนั้นกดดูได้ไม่จำกัด */
+async function prefetchAll(){
+  if(!S.apikey.trim()){banner('ต้องมี API key ก่อน','warn');return}
+  const syms=[...new Set([...S.holdings.map(h=>h.sym),...S.watchlist])];
+  const say=m=>banner(m,'info');
+  let done=0, fail=[];
+  for(const s of syms){
+    say(`กำลังเตรียมกราฟ ${done+1}/${syms.length} — ${s} …`);
+    onWait=say;
+    try{ await ensureHist(s,false,say); done++ }catch(e){ fail.push(s+' ('+e.message.slice(0,40)+')') }
+    onWait=null;
+  }
+  banner(`เตรียมกราฟเสร็จ ${done}/${syms.length} ตัว — ตอนนี้กดดูกราฟได้ไม่จำกัดจนถึงพรุ่งนี้`
+    +(fail.length?'<br>ไม่สำเร็จ: '+fail.join(', '):''), fail.length?'warn':'info');
+  if(selected)loadChart(selected);
+}
+function seriesFor(sym,rk){
+  const H=hist[sym]; if(!H)return null;
+  if(rk==='1D') return H.intra||null;
+  const d=H.daily; if(!d)return null;
+  return d.slice(Math.max(0,d.length-RANGES[rk].days-1));
+}
+/* % เปลี่ยนแปลงของแต่ละช่วง */
+function pctOf(sym,rk){
+  const a=seriesFor(sym,rk);
+  if(!a||a.length<2)return null;
+  return (a[a.length-1].c-a[0].c)/a[0].c*100;
+}
+/* เขียน % ลงบนปุ่มแต่ละช่วง */
+function paintRangeBtns(sym){
+  $$('#ranges button').forEach(b=>{
+    const rk=b.dataset.r, p=sym?pctOf(sym,rk):null;
+    b.innerHTML=`<div style="font-weight:700">${rk}</div>`
+      +`<div style="font-size:11px;font-weight:600" class="${p==null?'mut':cls(p)}">${p==null?'—':pct(p,1)}</div>`;
+  });
 }
 
 /* ============ REFRESH ============ */
@@ -891,15 +1167,37 @@ async function refreshAll(){
   }catch(e){banner('ดึงข้อมูลไม่สำเร็จ: '+e.message,'err')}
 }
 
-async function loadChart(sym){
-  selected=sym; renderWatch();
-  $('#chartTitle').textContent='กราฟราคา — '+sym;
-  if(!series[sym]){
-    if(!S.apikey.trim())return;
-    try{ series[sym]=await fetchHistory(sym); }
-    catch(e){ banner('โหลดกราฟ '+sym+' ไม่สำเร็จ: '+e.message,'err'); return }
+async function loadChart(sym,rk){
+  selected=sym; if(rk)range=rk; renderWatch();
+  $('#chartTitle').textContent='กราฟราคา — '+sym+'  ·  '+(RANGES[range]||{}).label;
+  if(!S.apikey.trim()){
+    paintRangeBtns(null);
+    $('#chartStats').innerHTML='<span class="warn">กราฟต้องใช้ API key — ไปแท็บ <b>ตั้งค่า</b> เพื่อขอฟรี แล้ววางในช่องมุมขวาบน</span>';
+    if(line){line.destroy();line=null}
+    return;
   }
+  if(!seriesFor(sym,range)){
+    const say=m=>{$('#chartStats').innerHTML='<span class="mut">'+m+'</span>'};
+    say('กำลังโหลดข้อมูล '+sym+' …');
+    onWait=say;
+    try{ await ensureHist(sym,range==='1D',say); banner(''); }
+    catch(e){
+      banner('โหลดกราฟ '+sym+' ไม่สำเร็จ: '+e.message,'err');
+      $('#chartStats').innerHTML='<span class="down">❌ โหลดไม่สำเร็จ: '+esc(e.message)+'</span>';
+      onWait=null; return;
+    }
+    onWait=null;
+  }
+  paintRangeBtns(sym);
   drawLine(sym);
+}
+function openChart(sym){
+  $$('.tab').forEach(x=>x.classList.remove('active'));
+  $$('.tab').find(x=>x.dataset.tab==='wl').classList.add('active');
+  ['db','pf','wl','ai','nt','st'].forEach(k=>$('#tab-'+k).classList.toggle('hide',k!=='wl'));
+  if(!S.watchlist.includes(sym)){S.watchlist.push(sym);save()}
+  loadChart(sym);
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 /* ============ RENDER: PORTFOLIO ============ */
@@ -918,7 +1216,9 @@ function renderPf(){
     const w=tv>0&&r.val!=null?r.val/tv*100:null;
     const tr=document.createElement('tr');
     tr.innerHTML=`
-      <td class="tick">${r.h.sym}<span class="nm">${(r.q.name||'').slice(0,34)}</span></td>
+      <td class="tick" data-chart="${r.h.sym}" style="cursor:pointer" title="กดเพื่อดูกราฟ">
+        <span style="border-bottom:1px dashed var(--muted)">${r.h.sym}</span> <span class="mut" style="font-size:11px">📈</span>
+        <span class="nm">${(r.q.name||'').slice(0,34)}</span></td>
       <td data-l="จำนวน"><input class="cell" data-e="qty" data-s="${r.h.sym}" value="${r.h.qty}"></td>
       <td data-l="ต้นทุน/หุ้น"><input class="cell" data-e="avg" data-s="${r.h.sym}" value="${r.h.avg}"></td>
       <td data-l="ราคา">${usd(r.px)}</td>
@@ -938,6 +1238,15 @@ function renderPf(){
   $('#k-pl2').innerHTML=`<span class="${cls(plp)}">${pct(plp)}</span> จากต้นทุน`;
   $('#k-day').textContent=usd(day); $('#k-day').className='val '+cls(day);
   $('#k-day2').innerHTML=`<span class="${cls(dayp)}">${pct(dayp)}</span> วันนี้`;
+
+  const cash=S.cash||0, total=tv+cash, cw=total>0?cash/total*100:null;
+  $('#k-cash').textContent=usd(cash);
+  $('#k-cash2').textContent=S.ccy==='THB'?'= $'+cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'≈ ฿'+(cash*fx()).toLocaleString('en-US',{maximumFractionDigits:0});
+  $('#k-total').textContent=usd(total);
+  $('#k-total2').textContent=S.ccy==='THB'?'อัตราแลกเปลี่ยน 1 USD = '+fx()+' THB':'≈ ฿'+(total*fx()).toLocaleString('en-US',{maximumFractionDigits:0});
+  $('#k-cashw').textContent=cw==null?'—':cw.toFixed(1)+'%';
+  $('#k-val2').textContent=S.holdings.length+' ตัวในพอร์ต'+(S.ccy==='THB'?'':' · ≈฿'+(tv*fx()).toLocaleString('en-US',{maximumFractionDigits:0}));
+
   drawPie(rows.filter(r=>r.val!=null));
 }
 
@@ -988,8 +1297,8 @@ function renderWatch(){
 }
 
 function drawLine(sym){
-  const all=series[sym]||[]; if(!all.length)return;
-  const data=all.slice(-range);
+  const data=seriesFor(sym,range)||[]; if(!data.length)return;
+  const intraday=['1D','1W'].includes(range);
   const c=$('#lineChart'); if(line)line.destroy();
   const first=data[0].c, last=data[data.length-1].c, up=last>=first;
   line=new Chart(c,{type:'line',
@@ -1004,10 +1313,11 @@ function drawLine(sym){
   const hi=Math.max(...data.map(p=>p.c)), lo=Math.min(...data.map(p=>p.c));
   $('#chartStats').innerHTML=
     `<span>ช่วงนี้ <b class="${cls(chg)}">${pct(chg)}</b></span>
+     <span>ราคาล่าสุด <b>${usd(last)}</b></span>
      <span>สูงสุด <b>${usd(hi)}</b></span>
      <span>ต่ำสุด <b>${usd(lo)}</b></span>
-     <span>จากจุดสูงสุด <b class="${cls(-1)}">${pct((last-hi)/hi*100)}</b></span>
-     <span class="mut">${data.length} วันทำการ</span>`;
+     <span>ห่างจากจุดสูงสุด <b class="${cls(last-hi)}">${pct((last-hi)/hi*100)}</b></span>
+     <span class="mut">${data.length} จุดข้อมูล${intraday?' (ระหว่างวัน)':''}</span>`;
 }
 
 /* ============ RENDER: NOTES ============ */
@@ -1060,6 +1370,30 @@ function renderDaily(){
   $('#regimeWhy').innerHTML='<b>เพราะอะไร:</b><ul style="margin:8px 0 0;padding-left:20px">'
     +R.why.map(w=>`<li style="margin-bottom:6px">${esc(w)}</li>`).join('')+'</ul>';
 
+  const AK={
+    add :{ic:'➕',lab:'พิจารณาซื้อเพิ่ม', col:'var(--up)'},
+    trim:{ic:'✂️',lab:'พิจารณาแบ่งขาย',  col:'var(--warn)'},
+    sell:{ic:'🔻',lab:'พิจารณาขายออก',   col:'var(--down)'},
+    hold:{ic:'⏸️',lab:'ถือต่อ ไม่ต้องทำอะไร',col:'var(--accent)'}
+  };
+  $('#actList').innerHTML=(DAILY.actions||[]).map(a=>{
+    const k=AK[a.kind]||AK.hold, q=S.quotes[a.sym]||{};
+    return `<div class="notecard" style="padding:14px;border-left:3px solid ${k.col}">
+      <div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="row" style="gap:9px">
+          <span class="tick" style="font-size:16px">${a.sym}</span>
+          <span class="pill" style="background:var(--panel);color:${k.col}">${k.ic} ${k.lab}</span>
+        </div>
+        <span class="tiny">${q.price!=null?'ราคา '+usd(q.price):''}</span>
+      </div>
+      <div style="font-weight:600;margin:9px 0 7px">${esc(a.title)}</div>
+      <div style="line-height:1.85;margin-bottom:8px"><b>เหตุผล:</b> ${esc(a.why)}</div>
+      <div style="line-height:1.85;background:var(--panel);border-radius:6px;padding:9px 12px">
+        <b>ข้อคิดก่อนตัดสินใจ:</b> ${esc(a.note)}</div>
+      <button class="sm ghost" data-chart="${a.sym}" style="margin-top:10px">📈 ดูกราฟ</button>
+    </div>`;
+  }).join('')||'<div class="tiny">ไม่มีข้อสังเกตพิเศษวันนี้</div>';
+
   const wait = R.level!=='buy' ? ' (ยังไม่ใช่จังหวะเข้า — ใช้ศึกษาไว้ก่อน)' : '';
   $('#coreHead').textContent='🛡️ โซน A — แกนหลัก'+wait;
   $('#spicyHead').textContent='🔥 โซน B — หุ้นซิ่ง'+wait;
@@ -1084,6 +1418,7 @@ function renderDaily(){
         </div>
       </div>
       <button class="sm ghost" data-pick="${pre}${i}" style="margin-top:11px">▸ ดูเหตุผล</button>
+      <button class="sm ghost" data-chart="${p.sym}" style="margin-top:11px">📈 ดูกราฟ</button>
       <div id="pk${pre}${i}" class="hide" style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line);line-height:1.85">
         <div style="margin-bottom:9px"><b>ทำไมน่าสนใจ:</b> ${esc(p.why)}</div>
         <div style="margin-bottom:9px"><b>📅 Catalyst:</b> ${esc(p.catalyst)}</div>
@@ -1094,16 +1429,41 @@ function renderDaily(){
   $('#coreList').innerHTML =DAILY.core .map((p,i)=>card(p,i,'c')).join('');
   $('#spicyList').innerHTML=DAILY.spicy.map((p,i)=>card(p,i,'s')).join('');
 
+  $('#radarList').innerHTML=(DAILY.radar||[]).map(r=>`
+    <div class="notecard" style="padding:14px;border-left:3px solid #a855f7">
+      <div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="row" style="gap:9px">
+          <span class="tick" style="font-size:16px">${r.sym}</span>
+          <span class="tiny">${esc(r.name)}</span>
+        </div>
+        <span class="tiny">${r.px!=null?usd(r.px)+' · ':''}นักวิเคราะห์ตาม: ${esc(r.coverage||'-')}</span>
+      </div>
+      <div style="margin-top:10px;line-height:1.85">
+        <div style="margin-bottom:8px"><b>⚙️ กลไกที่อาจทำให้วิ่ง:</b> ${esc(r.setup)}</div>
+        <div style="margin-bottom:8px"><b>✅ อะไรต้องเกิดขึ้นจริง:</b> ${esc(r.trigger)}</div>
+        <div style="background:rgba(239,68,68,.09);border-left:3px solid var(--down);padding:9px 12px;border-radius:5px">
+          <b class="down">❌ อะไรพิสูจน์ว่าคิดผิด:</b> ${esc(r.kill)}</div>
+      </div>
+      ${r.px!=null?`<button class="sm ghost" data-chart="${r.sym}" style="margin-top:10px">📈 ดูกราฟ</button>`:''}
+    </div>`).join('')||'<div class="tiny">รอบนี้ยังไม่เจอตัวที่เงื่อนไขครบ — ไม่มีก็คือไม่มี ดีกว่าฝืนหามาให้</div>';
+
   $('#srcList').innerHTML=DAILY.sources.map(s=>
     `· <a href="${s[1]}" target="_blank">${esc(s[0])}</a>`).join('<br>');
 }
 function pickToggle(e){
+  const ch=e.target.dataset.chart; if(ch){openChart(ch);return}
   const i=e.target.dataset.pick; if(i==null)return;
   const open=$('#pk'+i).classList.toggle('hide');
   e.target.textContent=open?'▸ ดูเหตุผล':'▾ ซ่อน';
 }
 $('#coreList').addEventListener('click',pickToggle);
 $('#spicyList').addEventListener('click',pickToggle);
+$('#actList').addEventListener('click',e=>{
+  const ch=e.target.dataset.chart; if(ch)openChart(ch);
+});
+$('#radarList').addEventListener('click',e=>{
+  const ch=e.target.dataset.chart; if(ch&&!ch.includes('/'))openChart(ch);
+});
 
 function renderAll(){
   renderDaily(); renderPf(); renderWatch(); renderNotes();
@@ -1116,11 +1476,11 @@ function renderAll(){
 /* ============ EVENTS ============ */
 $$('.tab').forEach(t=>t.addEventListener('click',()=>{
   $$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-  ['db','pf','wl','nt','st'].forEach(k=>$('#tab-'+k).classList.toggle('hide',k!==t.dataset.tab));
+  ['db','pf','wl','ai','nt','st'].forEach(k=>$('#tab-'+k).classList.toggle('hide',k!==t.dataset.tab));
 }));
 
 $('#provider').value=S.provider; $('#apikey').value=S.apikey;
-$('#provider').addEventListener('change',e=>{S.provider=e.target.value;series={};save()});
+$('#provider').addEventListener('change',e=>{S.provider=e.target.value;hist={};save()});
 const cleanKey=v=>v.replace(/[\s"'`]/g,'');
 function storeKey(){S.apikey=cleanKey($('#apikey').value);$('#apikey').value=S.apikey;save()}
 $('#apikey').addEventListener('input',storeKey);   /* บันทึกอัตโนมัติ ไม่ต้องกลัวลืมกดปุ่ม */
@@ -1142,6 +1502,8 @@ $('#addHold').addEventListener('click',()=>{
 });
 
 $('#pfBody').addEventListener('click',e=>{
+  const ch=e.target.closest('[data-chart]');
+  if(ch){openChart(ch.dataset.chart);return}
   const s=e.target.dataset.del; if(!s)return;
   if(confirm('ลบ '+s+' ออกจากพอร์ต?')){S.holdings=S.holdings.filter(h=>h.sym!==s);save();renderAll()}
 });
@@ -1161,10 +1523,36 @@ $('#wlGrid').addEventListener('click',e=>{
   S.watchlist=S.watchlist.filter(x=>x!==s); save(); renderWatch();
 });
 $('#ranges').addEventListener('click',e=>{
-  const r=e.target.dataset.r; if(!r)return; range=+r;
+  const r=e.target.dataset.r; if(!r)return;
   $$('#ranges button').forEach(b=>b.classList.remove('primary')); e.target.classList.add('primary');
-  if(selected)drawLine(selected);
+  if(selected)loadChart(selected,r); else range=r;
 });
+
+$('#prefetch').addEventListener('click',prefetchAll);
+$('#hclear').addEventListener('click',()=>{
+  if(confirm('ลบข้อมูลกราฟที่เก็บไว้ในเครื่องทั้งหมด? (ครั้งต่อไปจะต้องดึงใหม่)')){
+    localStorage.removeItem(HKEY); hist={};
+    banner('ล้างแคชกราฟแล้ว','info'); if(selected)loadChart(selected);
+  }
+});
+
+/* สลับสกุลเงิน */
+function setCcy(c){
+  S.ccy=c; save();
+  $('#ccyUSD').classList.toggle('primary',c==='USD');
+  $('#ccyTHB').classList.toggle('primary',c==='THB');
+  renderAll(); if(selected&&seriesFor(selected,range)){paintRangeBtns(selected);drawLine(selected);}
+}
+$('#ccyUSD').addEventListener('click',()=>setCcy('USD'));
+$('#ccyTHB').addEventListener('click',()=>setCcy('THB'));
+
+/* เงินสด */
+$('#cashIn').value=S.cash||'';
+$('#cashSave').addEventListener('click',()=>{
+  S.cash=num($('#cashIn').value)||0; save(); renderPf();
+  banner('บันทึกเงินสด '+usd(S.cash)+' แล้ว','info'); setTimeout(()=>banner(''),2200);
+});
+$('#cashIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('#cashSave').click()});
 
 $('#saveNote').addEventListener('click',()=>{
   const s=($('#nt-sym-new').value.trim()||$('#nt-sym').value).toUpperCase();
@@ -1191,7 +1579,7 @@ $('#impFile').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f)return;
   const r=new FileReader();
   r.onload=()=>{try{const j=JSON.parse(r.result);
-    S=Object.assign({},S,j,{apikey:S.apikey}); save(); series={}; renderAll();
+    S=Object.assign({},S,j,{apikey:S.apikey}); save(); hist={}; renderAll();
     banner('นำเข้าข้อมูลสำเร็จ','info')}catch(err){banner('ไฟล์ไม่ถูกต้อง','err')}};
   r.readAsText(f);
 });
@@ -1206,7 +1594,7 @@ $('#seedNoteBtn').addEventListener('click',()=>{
 });
 $('#clearBtn').addEventListener('click',()=>{
   if(confirm('ลบข้อมูลพอร์ต watchlist และบันทึกทั้งหมด?')){
-    localStorage.removeItem(KEY); S={...DEF}; series={}; renderAll(); banner('ล้างข้อมูลแล้ว','info')}
+    localStorage.removeItem(KEY); S={...DEF}; hist={}; renderAll(); banner('ล้างข้อมูลแล้ว','info')}
 });
 
 /* ============ อัปเดตอัตโนมัติ ============ */
@@ -1235,11 +1623,312 @@ function mktLabel(){
 function tick(){ $('#mktStatus').textContent=mktLabel(); }
 setInterval(tick,30000);
 
+/* ============ AI CHAT ============ */
+let chat=[];   /* [{role,content}] ไม่บันทึกลง localStorage — เริ่มใหม่ทุกครั้งที่เปิด */
+
+function ctx(){
+  let tv=0,tc=0;
+  const rows=S.holdings.map(h=>{
+    const q=S.quotes[h.sym]||{}, px=q.price, val=px!=null?px*h.qty:0, cost=h.avg*h.qty;
+    tv+=val; tc+=cost;
+    return {sym:h.sym,qty:h.qty,avg:h.avg,px,val,cost,pl:val-cost,plp:cost>0?(val-cost)/cost*100:null};
+  });
+  const L=[];
+  L.push('# พอร์ตของผู้ใช้ (ข้อมูล ณ '+new Date(S.stamp||DAILY.stamp).toLocaleString('th-TH')+')');
+  L.push('มูลค่ารวม $'+tv.toFixed(2)+' · ต้นทุนรวม $'+tc.toFixed(2)
+    +' · กำไร/ขาดทุน $'+(tv-tc).toFixed(2)+' ('+(tc>0?((tv-tc)/tc*100).toFixed(2):'-')+'%)');
+  L.push('เงินสดรอซื้อ $'+(S.cash||0).toFixed(2)+' · อัตราแลกเปลี่ยน 1 USD = '+fx()+' THB');
+  L.push('');
+  L.push('| หุ้น | จำนวน | ต้นทุน/หุ้น | ราคาล่าสุด | มูลค่า | กำไร/ขาดทุน | %พอร์ต |');
+  L.push('|---|---|---|---|---|---|---|');
+  for(const r of rows.sort((a,b)=>b.val-a.val))
+    L.push(`| ${r.sym} | ${r.qty} | $${r.avg} | ${r.px!=null?'$'+r.px:'-'} | $${r.val.toFixed(2)} | $${r.pl.toFixed(2)} (${r.plp!=null?r.plp.toFixed(2)+'%':'-'}) | ${tv>0?(r.val/tv*100).toFixed(1)+'%':'-'} |`);
+
+  L.push('\n# บทวิเคราะห์ล่าสุดที่แสดงอยู่ในแอป ('+new Date(DAILY.stamp).toLocaleDateString('th-TH')+')');
+  L.push('สัญญาณตลาด: '+DAILY.regime.level+' — '+DAILY.regime.title);
+  L.push(DAILY.regime.summary);
+  L.push('เหตุผล: '+DAILY.regime.why.join(' / '));
+  L.push('คำแนะนำภาพรวม: '+DAILY.regime.action);
+  L.push('ตัวเลขตลาด: '+DAILY.indices.map(i=>i.k+' '+i.v).join(' · '));
+
+  if(DAILY.actions&&DAILY.actions.length){
+    L.push('\n## ข้อสังเกตกับหุ้นที่ถืออยู่');
+    for(const a of DAILY.actions)
+      L.push(`- ${a.sym} [${a.kind}] ${a.title}\n  เหตุผล: ${a.why}\n  ข้อคิด: ${a.note}`);
+  }
+  const zone=(arr,t)=>{ if(!arr||!arr.length)return;
+    L.push('\n## '+t);
+    for(const p of arr) L.push(`- ${p.sym} (${p.name}) ราคา $${p.px} เป้านักวิเคราะห์ $${p.target} `
+      +`(${((p.target-p.px)/p.px*100).toFixed(1)}%) ความหนักแน่นหลักฐาน ${p.conviction}/5\n`
+      +`  ทำไม: ${p.why}\n  catalyst: ${p.catalyst}\n  ความเสี่ยง: ${p.risk}`);
+  };
+  zone(DAILY.core,'หุ้นแกนหลักที่น่าจับตา'); zone(DAILY.spicy,'หุ้นซิ่งที่น่าจับตา');
+
+  const nk=Object.keys(S.notes||{});
+  if(nk.length){
+    L.push('\n# บันทึกวิเคราะห์ส่วนตัวของผู้ใช้');
+    for(const k of nk) L.push('## '+k+'\n'+S.notes[k].body);
+  }
+  return L.join('\n');
+}
+
+const SYS=`คุณเป็นผู้ช่วยด้านการลงทุนที่ฝังอยู่ในหน้า dashboard หุ้นส่วนตัวของ Namo
+เขาอายุ 20 ปี เป็นคนไทย ลงทุนหุ้นสหรัฐระยะยาว ทุนรวมประมาณ 150 ดอลลาร์เท่านั้น
+เขา DCA เข้า S&P 500 (IVV) เป็นแกน และแบ่งอีกส่วนเล่นหุ้นเติบโต/หุ้นซิ่ง
+
+ตอบเป็นภาษาไทยเสมอ กระชับ ตรงประเด็น ใช้ตัวเลขจริงจากข้อมูลพอร์ตที่ให้มา
+
+หลักการที่ต้องยึด:
+- ห้ามสั่ง "ซื้อเลย" หรือ "ขายเลย" ให้ข้อมูล เหตุผลทั้งสองด้าน และความเสี่ยง แล้วให้เขาตัดสินใจเอง
+- คุณไม่ใช่ที่ปรึกษาการเงินที่มีใบอนุญาต บอกเขาตรง ๆ ถ้าเรื่องนั้นเกินขอบเขต
+- **ต้องกล้าเห็นต่างกับเขา** ถ้าเขากำลังจะทำผิดพลาดที่รู้กันดี อย่าเออออตามเพื่อให้เขาพอใจ
+  โดยเฉพาะกับดักทางความคิดเหล่านี้ ให้ชี้ให้เห็นตรง ๆ อย่างอ่อนโยนแต่ไม่อ้อมค้อม:
+  · การรอให้หุ้นกลับมาเท่าทุนก่อนค่อยขาย (disposition effect) — ตลาดไม่รู้ว่าคุณซื้อมาที่ราคาเท่าไร
+    ราคาที่คุณจ่ายไปแล้วไม่มีผลต่ออนาคตของหุ้น คำถามที่ถูกต้องคือ "ถ้าวันนี้ยังไม่มีหุ้นตัวนี้ จะซื้อที่ราคานี้ไหม"
+  · การถัวเฉลี่ยขาลงในหุ้นที่ thesis เสียไปแล้ว
+  · FOMO ไล่ราคาหุ้นที่เพิ่งวิ่งแรง
+  · การเทรดถี่ทั้งที่ทุนน้อยและค่าธรรมเนียมกินสัดส่วนสูง
+- เตือนเสมอเมื่อเห็นการกระจุกตัวหรือความเสี่ยงซ้ำซ้อนในพอร์ตเขา
+- ถ้าเขาถามเรื่องที่ต้องใช้ข้อมูลล่าสุดที่คุณไม่มี ให้บอกว่าไม่รู้ ห้ามเดาตัวเลข
+- เป้าหมายคือช่วยให้เขา **เข้าใจและอยู่ในเกมได้นาน** ไม่ใช่ช่วยให้เขาเทรดเก่งขึ้นในระยะสั้น
+  ด้วยทุน 150 ดอลลาร์ สิ่งที่มีค่าที่สุดที่เขาจะได้คือบทเรียน ไม่ใช่กำไร
+
+ข้อมูลพอร์ตและบทวิเคราะห์ปัจจุบันของเขาอยู่ด้านล่างนี้:
+
+`;
+
+const mdlite=t=>esc(t)
+  .replace(/```([\s\S]*?)```/g,(m,c)=>'<pre style="background:var(--bg);padding:9px;border-radius:6px;overflow-x:auto">'+c+'</pre>')
+  .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+  .replace(/`([^`]+)`/g,'<code style="background:var(--bg);padding:1px 5px;border-radius:4px">$1</code>')
+  .replace(/^### (.+)$/gm,'<b style="font-size:14px">$1</b>')
+  .replace(/^## (.+)$/gm,'<b style="font-size:15px">$1</b>')
+  .replace(/^[-·] (.+)$/gm,'• $1')
+  .replace(/\n/g,'<br>');
+
+function aiRender(){
+  const b=$('#aiBox');
+  if(!chat.length){
+    b.innerHTML='<div class="tiny" style="text-align:center;padding:40px 20px;line-height:2">'
+      +'ถามอะไรก็ได้เกี่ยวกับพอร์ตของคุณ<br>AI ตัวนี้เห็นหุ้นที่คุณถือ ต้นทุน กำไร/ขาดทุน เงินสด '
+      +'บันทึกวิเคราะห์ และบทวิเคราะห์ประจำวันทั้งหมด<br><br>'
+      +'ลองกดคำถามตัวอย่างด้านล่างดูได้</div>';
+    return;
+  }
+  b.innerHTML=chat.map(m=>m.role==='user'
+    ? `<div style="margin:0 0 14px;text-align:right"><div style="display:inline-block;max-width:82%;
+        background:var(--accent);color:#fff;padding:9px 13px;border-radius:12px 12px 3px 12px;text-align:left">
+        ${esc(m.content).replace(/\n/g,'<br>')}</div></div>`
+    : `<div style="margin:0 0 16px"><div style="display:inline-block;max-width:88%;background:var(--panel);
+        border:1px solid var(--line);padding:11px 14px;border-radius:12px 12px 12px 3px">
+        ${mdlite(m.content)}</div></div>`).join('');
+  b.scrollTop=b.scrollHeight;
+}
+
+/* ---- ผู้ให้บริการ AI ---- */
+const AIP={
+ gemini:{
+  name:'Gemini (Google)',
+  models:[['gemini-3.6-flash','3.6 Flash — สมดุล แนะนำ'],
+          ['gemini-3.5-flash-lite','3.5 Flash-Lite — โควต้าเยอะสุด'],
+          ['gemini-3-pro','3 Pro — ฉลาดสุด โควต้าน้อย']],
+  /* ดึงรายชื่อรุ่นสดจาก API — กันชื่อรุ่นล้าสมัย */
+  async list(key){
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key='+encodeURIComponent(key));
+    const t=await r.text(); let j=null; try{j=JSON.parse(t)}catch(e){}
+    if(!r.ok) throw new Error(fmtErr(r.status,(j&&j.error&&j.error.message)||t.slice(0,180)));
+    return (j.models||[])
+      .filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent'))
+      .map(m=>m.name.replace(/^models\//,''))
+      .filter(n=>/^gemini/.test(n)&&!/embedding|aqa|vision|image|tts|robotics|live|native-audio/.test(n))
+      .sort((a,b)=>b.localeCompare(a,undefined,{numeric:true}))
+      .map(n=>[n,n]);
+  },
+  help:`<b>Gemini ฟรีจริง ไม่ต้องผูกบัตรเครดิต</b> — ตัวเลือกที่คุ้มที่สุดสำหรับคุณตอนนี้<br>
+    1. เข้า <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> ล็อกอินด้วยบัญชี Google<br>
+    2. กด <b>Create API key</b> → เลือกโปรเจกต์ (หรือให้มันสร้างใหม่ให้) → คัดลอก key<br>
+    3. วางด้านล่างแล้วกดบันทึก<br>
+    <span class="mut">โควต้าฟรี Flash ~250 ครั้ง/วัน · Flash-Lite ~1,000 ครั้ง/วัน · รีเซ็ตทุกเที่ยงคืนเวลาแปซิฟิก
+    (ประมาณ 14:00-15:00 น. บ้านเรา) · ภาษาไทยใช้ได้ดี</span>`,
+  async send(key,model,sys,msgs){
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,{
+      method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:sys}]},
+        contents:msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),
+        generationConfig:{maxOutputTokens:1800,temperature:0.6}
+      })});
+    const t=await r.text(); let j=null; try{j=JSON.parse(t)}catch(e){}
+    if(!r.ok) throw new Error(fmtErr(r.status,(j&&j.error&&j.error.message)||t.slice(0,200)));
+    const c=j.candidates&&j.candidates[0];
+    if(!c) throw new Error('ไม่ได้รับคำตอบกลับมา — อาจโดนตัวกรองเนื้อหา');
+    return (c.content&&c.content.parts||[]).map(p=>p.text||'').join('');
+  }},
+
+ groq:{
+  name:'Groq',
+  models:[['llama-3.3-70b-versatile','Llama 3.3 70B — สมดุล'],
+          ['llama-3.1-8b-instant','Llama 3.1 8B — เร็วมาก']],
+  async list(key){
+    const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{'authorization':'Bearer '+key}});
+    const t=await r.text(); let j=null; try{j=JSON.parse(t)}catch(e){}
+    if(!r.ok) throw new Error(fmtErr(r.status,(j&&j.error&&j.error.message)||t.slice(0,180)));
+    return (j.data||[]).map(m=>m.id)
+      .filter(n=>!/whisper|tts|guard|vision/i.test(n)).sort()
+      .map(n=>[n,n]);
+  },
+  help:`<b>Groq ฟรี ไม่ต้องผูกบัตร</b> — ตอบเร็วที่สุด แต่ภาษาไทยสู้ Gemini ไม่ได้<br>
+    1. เข้า <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> สมัครด้วย Google/GitHub<br>
+    2. กด <b>Create API Key</b> → คัดลอก<br>
+    <span class="mut">มีลิมิตต่อนาทีและต่อวัน ถ้าเกินจะขึ้น 429 ให้รอสักครู่</span>`,
+  async send(key,model,sys,msgs){
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+key},
+      body:JSON.stringify({model,max_tokens:1800,temperature:0.6,
+        messages:[{role:'system',content:sys},...msgs]})});
+    const t=await r.text(); let j=null; try{j=JSON.parse(t)}catch(e){}
+    if(!r.ok) throw new Error(fmtErr(r.status,(j&&j.error&&j.error.message)||t.slice(0,200)));
+    return j.choices[0].message.content;
+  }},
+
+ claude:{
+  name:'Claude (Anthropic)',
+  models:[['claude-sonnet-5','Sonnet 5 — คิดลึกสุด'],
+          ['claude-haiku-4-5-20251001','Haiku 4.5 — ถูกกว่า']],
+  help:`<b>Claude ไม่ฟรี</b> — และ<b>แพลน Claude Pro ที่คุณมีอยู่ใช้กับตรงนี้ไม่ได้</b> เป็นคนละบิลกัน<br>
+    1. เข้า <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> →
+    <b>Billing</b> → เติมเครดิตขั้นต่ำ ~$5 → <b>API Keys</b> → Create Key<br>
+    <span class="mut">คุยวันละไม่กี่ข้อความใช้เดือนละไม่ถึง $1 แต่เป็นเงินเพิ่มจาก Pro ที่จ่ายอยู่แล้ว</span>`,
+  async send(key,model,sys,msgs){
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'content-type':'application/json','x-api-key':key,
+        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model,max_tokens:1800,system:sys,messages:msgs})});
+    const t=await r.text(); let j=null; try{j=JSON.parse(t)}catch(e){}
+    if(!r.ok) throw new Error(fmtErr(r.status,(j&&j.error&&j.error.message)||t.slice(0,200)));
+    return (j.content||[]).map(c=>c.text||'').join('');
+  }}
+};
+function fmtErr(st,msg){
+  if(st===401||st===403) return 'API key ไม่ถูกยอมรับ (HTTP '+st+') — เช็กว่าคัดลอกครบ และเลือกผู้ให้บริการตรงกับ key · '+msg;
+  if(st===429) return 'ใช้โควต้าหมดชั่วคราว (429) — รอสักครู่ หรือสลับไปรุ่นที่โควต้าเยอะกว่า · '+msg;
+  if(st===400) return 'คำขอไม่ถูกต้อง (400) — อาจเป็นชื่อรุ่นที่ไม่มีแล้ว ลองเปลี่ยนรุ่นดู · '+msg;
+  return 'HTTP '+st+' — '+msg;
+}
+const prov =()=>AIP[S.aiprov||'gemini']||AIP.gemini;
+const aiKey=()=>((S.aikeys||{})[S.aiprov||'gemini']||'').trim();
+const aiMdl=()=>((S.aimodels||{})[S.aiprov||'gemini'])||prov().models[0][0];
+
+let aiBusy=false;
+async function aiSend(text){
+  if(aiBusy)return;
+  const q=(text!=null?text:$('#aiIn').value).trim(); if(!q)return;
+  if(!aiKey()){banner('ยังไม่ได้ใส่ API key ของ '+prov().name+' — ดูวิธีขอด้านบนของแท็บนี้','warn');
+    $('#aiSetup').classList.remove('hide'); return}
+  $('#aiIn').value=''; chat.push({role:'user',content:q}); aiRender();
+  aiBusy=true; $('#aiSend').textContent='…';
+  $('#aiBox').insertAdjacentHTML('beforeend','<div class="tiny" style="padding:6px">กำลังคิด…</div>');
+  $('#aiBox').scrollTop=$('#aiBox').scrollHeight;
+  const msgs=chat.map(m=>({role:m.role,content:m.content}));
+  try{
+    let out;
+    try{
+      out=await prov().send(aiKey(),aiMdl(),SYS+ctx(),msgs);
+    }catch(e1){
+      /* ชื่อรุ่นอาจเลิกให้บริการแล้ว — ดึงรายชื่อรุ่นใหม่แล้วลองอีกครั้งอัตโนมัติ */
+      if(/404|no longer available|not found|does not exist|decommission/i.test(e1.message) && await loadModels(true)){
+        out=await prov().send(aiKey(),aiMdl(),SYS+ctx(),msgs);
+        banner('รุ่นเดิมเลิกให้บริการแล้ว เปลี่ยนไปใช้ <b>'+aiMdl()+'</b> ให้อัตโนมัติ','info');
+      } else throw e1;
+    }
+    chat.push({role:'assistant',content:out});
+  }catch(e){
+    chat.push({role:'assistant',content:'⚠️ คุยไม่สำเร็จ: '+e.message
+      +(/404|no longer available/i.test(e.message)?'\n\nลองกดปุ่ม **↻ โหลดรายชื่อรุ่น** ในกล่องตั้งค่าด้านบน แล้วเลือกรุ่นใหม่':'')});
+  }
+  aiBusy=false; $('#aiSend').textContent='ส่ง'; aiRender();
+}
+
+function aiProvUI(){
+  const P=prov(), pk=S.aiprov||'gemini';
+  $('#aiProv').value=pk;
+  const live=(S.aimodelList||{})[pk];              /* รายชื่อรุ่นที่ดึงสดมา ถ้ามี */
+  const list=(live&&live.length)?live:P.models;
+  $('#aiModel').innerHTML=list.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  $('#aiModel').value=aiMdl();
+  if($('#aiModel').selectedIndex<0)$('#aiModel').selectedIndex=0;
+  $('#aiHelp').innerHTML=P.help;
+  $('#aiKey').value=aiKey();
+  aiSetupVis();
+}
+/* ดึงรายชื่อรุ่นสด แล้วเลือกตัวที่เหมาะที่สุดให้อัตโนมัติ */
+async function loadModels(quiet){
+  const P=prov(), pk=S.aiprov||'gemini';
+  if(!P.list||!aiKey())return false;
+  try{
+    const ms=await P.list(aiKey());
+    if(!ms.length)throw new Error('ไม่พบรุ่นที่ใช้ได้');
+    S.aimodelList=S.aimodelList||{}; S.aimodelList[pk]=ms;
+    const has=n=>ms.some(m=>m[0]===n);
+    if(!has(aiMdl())){
+      /* เลือก flash ตัวใหม่สุดก่อน ไม่มีก็เอาตัวแรก */
+      const pick=ms.find(m=>/flash/i.test(m[0])&&!/lite|preview|exp/i.test(m[0]))
+              || ms.find(m=>/flash|instant|70b/i.test(m[0])) || ms[0];
+      S.aimodels=S.aimodels||{}; S.aimodels[pk]=pick[0];
+    }
+    save(); aiProvUI();
+    if(!quiet)banner('พบ '+ms.length+' รุ่นที่ใช้ได้ · เลือกให้แล้ว: <b>'+aiMdl()+'</b>','info');
+    return true;
+  }catch(e){ if(!quiet)banner('โหลดรายชื่อรุ่นไม่สำเร็จ: '+e.message,'err'); return false }
+}
+$('#aiKeyModels').addEventListener('click',()=>{
+  S.aikeys=S.aikeys||{}; S.aikeys[S.aiprov||'gemini']=$('#aiKey').value.replace(/[\s"']/g,''); save();
+  banner('กำลังโหลดรายชื่อรุ่น…','info'); loadModels(false);
+});
+function aiSetupVis(){ $('#aiSetup').classList.toggle('hide',!!aiKey()) }
+
+$('#aiProv').addEventListener('change',e=>{S.aiprov=e.target.value;save();aiProvUI()});
+$('#aiModel').addEventListener('change',e=>{
+  S.aimodels=S.aimodels||{}; S.aimodels[S.aiprov||'gemini']=e.target.value; save();
+});
+$('#aiKeySave').addEventListener('click',async()=>{
+  S.aikeys=S.aikeys||{}; S.aikeys[S.aiprov||'gemini']=$('#aiKey').value.replace(/[\s"']/g,'');
+  save(); aiSetupVis();
+  if(aiKey()){
+    banner('บันทึก key แล้ว · กำลังเช็กว่ามีรุ่นไหนใช้ได้บ้าง…','info');
+    const ok=await loadModels(true);
+    banner(ok?'พร้อมใช้งาน · รุ่นที่เลือก <b>'+aiMdl()+'</b> — ถามได้เลย'
+              :'บันทึก key แล้ว — ถ้าคุยไม่ได้ ลองกด "↻ โหลดรายชื่อรุ่น"','info');
+    setTimeout(()=>banner(''),4000);
+  } else { banner('ล้าง key แล้ว','info'); setTimeout(()=>banner(''),2000) }
+});
+$('#aiKeyTest').addEventListener('click',async()=>{
+  S.aikeys=S.aikeys||{}; S.aikeys[S.aiprov||'gemini']=$('#aiKey').value.replace(/[\s"']/g,''); save();
+  if(!aiKey()){banner('ยังไม่มี key ในช่อง','warn');return}
+  banner('กำลังทดสอบ '+prov().name+' …','info');
+  try{
+    const o=await prov().send(aiKey(),aiMdl(),'ตอบสั้นที่สุด',[{role:'user',content:'ตอบว่า OK'}]);
+    banner('✅ ใช้งานได้ — '+prov().name+' ตอบกลับว่า: '+o.slice(0,60),'info'); aiSetupVis();
+  }catch(e){ banner('❌ '+e.message,'err') }
+});
+$('#aiSend').addEventListener('click',()=>aiSend());
+$('#aiIn').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend()}
+});
+$('#aiClear').addEventListener('click',()=>{chat=[];aiRender()});
+$('#aiSuggest').addEventListener('click',e=>{
+  if(e.target.tagName==='BUTTON') aiSend(e.target.textContent);
+});
+
 /* ============ INIT ============ */
-renderAll(); tick();
-if(S.apikey.trim()) refreshAll();
-else banner('หน้านี้ใช้งานได้เลยด้วยราคาภาพนิ่งวันที่ 11 ส.ค. 2026 — พอร์ต บันทึกวิเคราะห์ และตัวเลขกำไร/ขาดทุนครบทุกอย่าง<br>'
-  +'ถ้าอยากให้ราคาอัปเดตเองและมีกราฟย้อนหลัง: วาง API key ในช่องมุมขวาบน แล้วกด "ทดสอบ key" → "ดึงราคา"','info');
+setCcy(S.ccy||'USD');
+aiProvUI(); aiRender(); paintRangeBtns(null);
+tick();
+/* ไม่ดึงราคาสดอัตโนมัติตอนเปิดหน้า — เก็บโควต้าไว้ให้กราฟ
+   ราคาที่แสดงมาจากรอบอัปเดตของ Claude อยู่แล้ว กด "ดึงราคา" เองถ้าต้องการราคาสด */
+if(!S.apikey.trim())
+  banner('ราคาที่แสดงมาจากรอบอัปเดตของ Claude — ใช้งานได้ครบทุกอย่างโดยไม่ต้องมี API key<br>'
+    +'ถ้าอยากได้ราคาสดและกราฟย้อนหลัง: วาง API key ในช่องมุมขวาบน แล้วกด "ทดสอบ key"','info');
 </script>
 </body>
 </html>
